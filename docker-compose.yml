@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  kong:
+    image: kong:3.4
+    container_name: kong
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/kong.yml:/kong/kong.yml
+    depends_on:
+      - auth-service
+      - document-service
+      - notification-service
+      - interoperator-service
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "6000:5000"
+
+  document-service:
+    build: ./document-service
+    ports:
+      - "9080:8080"
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "5567:4567"
+
+  interoperator-service:
+    build: ./interoperator-service
+    ports:
+      - "4000:3000"

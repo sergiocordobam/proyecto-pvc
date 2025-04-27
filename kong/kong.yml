@@ -1,0 +1,30 @@
+_format_version: "3.0"
+services:
+
+  - name: auth_service
+    url: http://auth-service:5000
+    routes:
+      - name: auth_service_route
+        paths:
+          - /auth
+
+  - name: document_service
+    url: http://document-service:8080
+    routes:
+      - name: document_service_route
+        paths:
+          - /docs
+
+  - name: notification_service
+    url: http://notification-service:4567
+    routes:
+      - name: notification_service_route
+        paths:
+          - /notify
+
+  - name: interoperator_service
+    url: http://interoperator-service:3000
+    routes:
+      - name: interoperator_service_route
+        paths:
+          - /interop
