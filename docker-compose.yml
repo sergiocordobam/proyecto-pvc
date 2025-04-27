@@ -35,9 +35,9 @@ services:
   notification-service:
     build: ./notification-service
     ports:
-      - "5567:4567"
+      - "5567:5001"
 
   interoperator-service:
     build: ./interoperator-service
     ports:
-      - "4000:3000"
+      - "4000:5002"

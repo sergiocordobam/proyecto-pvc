@@ -1,5 +1,5 @@
 FROM python:3.9
 WORKDIR /app
-COPY app.py .
+COPY app_auth_service.py .
 RUN pip install flask
-CMD ["python", "app.py"]
+CMD ["python", "app_auth_service.py"]

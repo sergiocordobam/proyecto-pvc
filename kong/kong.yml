@@ -16,14 +16,14 @@ services:
           - /docs
 
   - name: notification_service
-    url: http://notification-service:4567
+    url: http://notification-service:5001
     routes:
       - name: notification_service_route
         paths:
           - /notify
 
   - name: interoperator_service
-    url: http://interoperator-service:3000
+    url: http://interoperator-service:5002
     routes:
       - name: interoperator_service_route
         paths:

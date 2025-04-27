@@ -1,5 +1,5 @@
-FROM ruby:2.7
+FROM python:3.9
 WORKDIR /app
-COPY app.rb .
-RUN gem install sinatra
-CMD ["ruby", "app.rb", "-o", "0.0.0.0"]
+COPY app_notification_service.py .
+RUN pip install flask
+CMD ["python", "app_notification_service.py"]
