@@ -25,7 +25,7 @@ class OperatorService {
 
     async getOperatorByName(name) {
         const response = await this.getOperators();
-        const operator = response.find((op) => op.name === name);
+        const operator = response.find((op) => op.operatorName === name);
         console.log(`${name} Operator fetched by operator service`);
         return operator
     }
