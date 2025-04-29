@@ -1,0 +1,22 @@
+{
+  "name": "interoperator-service",
+  "version": "1.0.0",
+  "description": "Service for interoperation with GovCarpeta",
+  "main": "index.js",
+  "author": "Pablo Micolta",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergiocordobam/proyecto-pvc.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sergiocordobam/proyecto-pvc/issues"
+  },
+  "homepage": "https://github.com/sergiocordobam/proyecto-pvc#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
