@@ -1,4 +1,5 @@
 const express = require('express');
+const operatorRoutes = require('./Routes/Operator_Routes'); // Import the routes file
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -7,6 +8,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Routes
+app.use('/comunication', operatorRoutes); // Mount the routes under '/comunication'
+
 app.get('/', (req, res) => {
     res.send('Welcome to the Node.js App!');
 });
