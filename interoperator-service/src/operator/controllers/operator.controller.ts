@@ -43,9 +43,15 @@ export class OperatorController {
                 ],
                 };
                 const registeredOperator = await this.registrationService.registerOperator(operatorData);
-                this.tokenService.saveToken(registeredOperator.OperatorId);
+                this.tokenService.saveToken(registeredOperator);
+                const endpointData = {
+                    idOperator: registeredOperator,
+                    endPoint: process.env.OPERATOR_TRANSFER_ENDPOINT!,
+                    endPointConfirm: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM
+                }
+                this.registrationService.registerEndPoint(endpointData);
+            };
                 console.log(`Operator ${operatorName} registered successfully.`);
-            }
         }catch (error) {
             console.error('Error checking operator in system:', error.message);
         }

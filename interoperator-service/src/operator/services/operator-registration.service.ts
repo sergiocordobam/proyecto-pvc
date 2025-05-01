@@ -18,4 +18,16 @@ export class OperatorRegistrationService {
             throw error;
         }
     }
+
+    async registerEndPoint(endpointData: any): Promise<void> {
+        try {
+            console.log(`Registering endpointData`);
+            const response = await axios.post(`${this.apiUrl}/registerTransferEndPoint`, endpointData);
+            console.log("Operator registered successfully");
+            return response.data;
+        } catch (error) {
+            console.error('Error registering operator:', error.message);
+            throw error;
+        }
+    }
 }
