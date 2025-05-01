@@ -1,9 +1,16 @@
-from flask import Flask
+from flask import Flask, request, jsonify
+from user.user import User
+
 app = Flask(__name__)
 
-@app.route("/")
-def index():
-    return "Auth Service: ready"
+user_service = User()
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    response, status = user_service.register(data)
+
+    return jsonify(response), status
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
