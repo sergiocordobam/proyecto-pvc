@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from user_register.register import UserRegister
 from user_delete.delete import UserDelete
+from user_login.login import UserLogin
 
 app = Flask(__name__)
 CORS(app)
-
 
 @app.route("/register", methods=["POST"])
 @cross_origin()
@@ -30,6 +30,16 @@ def delete_user():
     result, status_code = user_delete.delete_user_by_document_id(document_id)
 
     return jsonify(result), status_code
+
+@app.route("/verify_token", methods=["POST"])
+def verify_token():
+    data = request.get_json()
+    id_token = data.get("idToken")
+
+    login_handler = UserLogin()
+    
+    response, status = login_handler.verify_token(id_token)
+    return jsonify(response), status
 
 if __name__ == "__main__":
     app.run(debug=True)
