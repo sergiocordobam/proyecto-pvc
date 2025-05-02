@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"document-service/internal/infrastructure/gcp"
 	"encoding/json"
 	"errors"
 	"log"
@@ -27,11 +28,12 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	ctx := context.Background()
-	storageClient, err := storage.NewClient(ctx)
+	storageClient, err := gcp.NewStorageClient(ctx)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	bkt := storageClient.Bucket("document-user-admin")
+	defer storageClient.Client.Close()
+	bkt := storageClient.Client.Bucket("document-user-admin")
 
 	// User Creation Route
 	r.Post("/user", func(w http.ResponseWriter, r *http.Request) {
