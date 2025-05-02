@@ -1,13 +1,12 @@
 import re
-import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from firebase_admin import auth, firestore
 import requests
+from firebase.firebase_initialization import initialize_firebase
 
-cred = credentials.Certificate('serviceAccountKey.json')
-firebase_admin.initialize_app(cred)
+initialize_firebase()
 db = firestore.client()
 
-class User:
+class UserRegister:
     def __init__(self):
         self.db = db
 
