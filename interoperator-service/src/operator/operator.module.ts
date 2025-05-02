@@ -3,6 +3,7 @@ import { OperatorController } from './controllers/operator.controller';
 import { OperatorFetchService } from './services/operator-fetch.service';
 import { OperatorRegistrationService } from './services/operator-registration.service';
 import { TokenService } from './services/token.service';
+import { TransferService } from './services/transfer.service';
 
 @Module({
     controllers: [OperatorController],
@@ -10,9 +11,10 @@ import { TokenService } from './services/token.service';
         OperatorFetchService,
         OperatorRegistrationService,
         TokenService,
+        TransferService,
         {
-            provide: 'API_URL', // Custom provider token
-            useValue: process.env.API_BASE_URL || 'http://localhost:3000', // Provide the value
+            provide: 'API_URL',
+            useValue: process.env.API_BASE_URL || 'http://localhost:3000',
         },
     ],
 })

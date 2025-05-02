@@ -1,8 +1,11 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, Get, Req, Res, Post ,Body, HttpCode, HttpStatus} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { OperatorFetchService } from '../services/operator-fetch.service';
 import { OperatorRegistrationService } from '../services/operator-registration.service';
 import { TokenService } from '../services/token.service';
+import { TransferService } from '../services/transfer.service';
+import { TransferCitizenDto } from '../DTO/TransferCitizenDto';
+import { ConfirmTransferDto } from '../DTO/ConfirmTransferDto';
 
 @Controller('operators')
 export class OperatorController {
@@ -10,6 +13,7 @@ export class OperatorController {
         private readonly fetchService: OperatorFetchService,
         private readonly registrationService: OperatorRegistrationService,
         private readonly tokenService: TokenService,
+        private readonly TransferService: TransferService,
     ) {this.initialize();}
 
     @Get()
@@ -56,4 +60,18 @@ export class OperatorController {
             console.error('Error checking operator in system:', error.message);
         }
     }
+
+    @Post('transfer-citizen')
+    @HttpCode(HttpStatus.OK)
+    async transferCitizen(@Body() dto: TransferCitizenDto): Promise<any> {
+        return this.TransferService.transferCitizen(dto);
+    }
+
+    @Post('confirm-citizen-transfer')
+    @HttpCode(HttpStatus.OK)
+    async confirmCitizenTransfer(@Body() dto: ConfirmTransferDto): Promise<any> {
+        return this.TransferService.confirmTransfer(dto);
+    }
 }
+
+

@@ -1,21 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
 import axios from 'axios';
+import { RegisterOperatorDto } from '../DTO/RegisterOperatorDto';
+//import { RegisterEndpointDto } from '../dtos/register-endpoint.dto';
 
 @Injectable()
 export class OperatorRegistrationService {
-    constructor(@Inject('API_URL')private readonly apiUrl: string = process.env.API_BASE_URL!) {
-        this.apiUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    }
+    constructor(@Inject('API_URL') private readonly apiUrl: string = process.env.API_BASE_URL!,) {}
 
-    async registerOperator(operatorData: any): Promise<any> {
+    async registerOperator(dto: RegisterOperatorDto): Promise<any> {
         try {
-            console.log(`Registering operator: ${operatorData.name}`);
-            const response = await axios.post(`${this.apiUrl}/registerOperator`, operatorData);
-            console.log(`Operator registered successfully: ${operatorData.name}`);
+            const response = await axios.post(`${this.apiUrl}/registerOperator`, dto);
             return response.data;
         } catch (error) {
-            console.error('Error registering operator:', error.message);
-            throw error;
+            throw new Error(`Error registering operator: ${error.message}`);
         }
     }
 
