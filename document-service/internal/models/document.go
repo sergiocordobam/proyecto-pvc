@@ -10,16 +10,18 @@ type Document struct {
 }
 type Metadata struct {
 	Name         string    `json:"name"`
-	Size         int64     `json:"size"`
-	OwnerID      int64     `json:"owner_id"`
+	AbsPath      string    `json:"abs_path"`
+	Size         int       `json:"size"`
+	OwnerID      int       `json:"owner_id"`
 	Type         string    `json:"type"`
 	CreationDate time.Time `json:"creation_date"`
+	ContentType  string    `json:"content_type"`
 }
 
-func NewDocument(name, documentType, url string, size, ownerId int64) Document {
+func NewDocument(name, documentType string, size, ownerId int) Document {
 	currentDate := time.Now()
 	return Document{
-		URL: url,
+		URL: "",
 		Metadata: Metadata{
 			Name:         name,
 			Size:         size,

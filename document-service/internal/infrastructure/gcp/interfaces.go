@@ -8,12 +8,12 @@ import (
 )
 
 type StorageClientInterface interface {
-	WriteObject(ctx context.Context, path string, content []byte) error
-	ReadObject(ctx context.Context, path string) ([]byte, error)
-	ObjectExists(ctx context.Context, prefix string) (bool, error)
+	ReadObjectData(ctx context.Context, path string) ([]byte, error)
+	ObjectExists(ctx context.Context, userID int, path string) bool
 	DeleteObject(ctx context.Context, path string) error
-	SetObjectAttributes(ctx context.Context, path string, attrs storage.ObjectAttrsToUpdate) error
-	GenerateSignedURL(path string, method string, expiry time.Duration) (string, error)
+	SetObjectAttributes(ctx context.Context, objectHandler *storage.ObjectHandle, attrs storage.ObjectAttrsToUpdate) error
+	GenerateSignedURL(path string, method string, expiry time.Time) (string, error)
 	ListObjectsWithPrefix(ctx context.Context, prefix string) ([]string, error)
-	UserExits(ctx context.Context, userID uint64) bool
+	GetBucketPointer() *storage.BucketHandle
+	Close() error
 }
