@@ -29,7 +29,7 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 
 		var uploadRequest models.UploadRequest
 		if err := json.NewDecoder(r.Body).Decode(&uploadRequest); err != nil {
-			pkg.Error(w, http.StatusBadRequest, "Invalid request body")
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
 			return
 		}
 
@@ -42,7 +42,7 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 		documents := generateDocumentStructs(uploadRequest.UserID, uploadRequest.Files)
 		err := h.ObjectStorageRepository.CreateUserDirectory(r.Context(), uploadRequest.UserID)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Failed to create user directory")
+			pkg.Error(w, http.StatusFailedDependency, "Failed to create user directory: %v", err)
 			return
 		}
 
@@ -56,7 +56,7 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 			documents[i].URL = url
 			signedURLs = append(signedURLs, models.SignedUrlInfo{
 				FileName:    document.Metadata.Name,
-				SignedUrl:   document.URL,
+				SignedUrl:   url,
 				ExpiresAt:   time.Now().Add(15 * time.Minute), // Set appropriate expiration
 				ContentType: document.Metadata.ContentType,
 			})
@@ -76,7 +76,7 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 func generateDocumentStructs(userID int, fileUploadInfo []models.FileUploadInfo) []models.Document {
 	documentsList := make([]models.Document, len(fileUploadInfo))
 	for i, file := range fileUploadInfo {
-		documentsList[i] = models.NewDocument(file.FileName, file.DocumentType, file.Size, userID)
+		documentsList[i] = models.NewDocument(file.FileName, file.DocumentType, file.ContentType, file.Size, userID)
 	}
 	return documentsList
 }

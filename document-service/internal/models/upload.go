@@ -15,9 +15,9 @@ type UploadRequest struct {
 	Files  []FileUploadInfo `json:"files"`
 }
 type SignedUrlInfo struct {
-	FileName    string    `json:"fileName"`  // Nombre del archivo solicitado (útil para el cliente)
-	SignedUrl   string    `json:"signedUrl"` // La URL firmada generada
-	ExpiresAt   time.Time `json:"expiresAt"` // Fecha de expiración de la URL firmada
+	FileName    string    `json:"fileName"`
+	SignedUrl   string    `json:"signedUrl"`
+	ExpiresAt   time.Time `json:"expiresAt"`
 	ContentType string    `json:"contentType"`
 }
 type UploadResponse struct {

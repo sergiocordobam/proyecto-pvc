@@ -18,7 +18,7 @@ type Metadata struct {
 	ContentType  string    `json:"content_type"`
 }
 
-func NewDocument(name, documentType string, size, ownerId int) Document {
+func NewDocument(name, documentType, contentType string, size, ownerId int) Document {
 	currentDate := time.Now()
 	return Document{
 		URL: "",
@@ -28,6 +28,7 @@ func NewDocument(name, documentType string, size, ownerId int) Document {
 			OwnerID:      ownerId,
 			Type:         documentType,
 			CreationDate: currentDate,
+			ContentType:  contentType,
 		},
 	}
 }

@@ -6,10 +6,10 @@ import (
 	"document-service/internal/models"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/labstack/gommon/log"
 )
 
 type ObjectStorageRepository struct {
@@ -22,7 +22,7 @@ func NewObjectStorageRepository(client gcp.StorageClientInterface) *ObjectStorag
 
 func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Document) (string, error) {
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
-	url, err := o.gcpclient.GenerateSignedURL(fmt.Sprintf("%s/%s", document.Metadata.OwnerID, document.Metadata.Name), "up", expiryTime)
+	url, err := o.gcpclient.GenerateSignedURL(fmt.Sprintf("%d/%s", document.Metadata.OwnerID, document.Metadata.Name), "up", expiryTime)
 	if err != nil {
 		return "", err
 	}
@@ -51,8 +51,13 @@ func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID i
 }
 
 func (o *ObjectStorageRepository) CreateUserDirectory(ctx context.Context, userID int) error {
+	userIDDirectory := fmt.Sprintf("%d/", userID)
+	if o.gcpclient.ObjectExists(ctx, userID, "/") {
+		log.Warn("user directory already exists")
+		return nil
+	}
 	bkt := o.gcpclient.GetBucketPointer()
-	obj := bkt.Object(strconv.Itoa(userID) + "/")
+	obj := bkt.Object(userIDDirectory)
 	writer := obj.NewWriter(ctx)
 
 	if err := writer.Close(); err != nil {

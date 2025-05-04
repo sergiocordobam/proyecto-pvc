@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 type DocumentLoaderRoutes struct {
@@ -26,8 +27,18 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 
 }
 func (d *DocumentLoaderRoutes) UseMiddlewares() {
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"}, // Encabezados permitidos
+		ExposedHeaders:   []string{"*"},                                                       // Encabezados que el frontend puede leer
+		AllowCredentials: true,                                                                // Permite cookies, encabezados de autorización, etc.
+		MaxAge:           3600,                                                                // Tiempo que el navegador puede cachear la respuesta de preflight
+	})
+
 	d.router.Use(middleware.Logger)
 	d.router.Use(middleware.Recoverer)
+	d.router.Use(corsMiddleware.Handler)
 }
 func (d *DocumentLoaderRoutes) ListRoutes() {
 	fmt.Println("Available routes: ")
