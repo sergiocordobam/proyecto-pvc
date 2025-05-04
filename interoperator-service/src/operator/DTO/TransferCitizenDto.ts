@@ -3,13 +3,9 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class TransferCitizenDto {
     @IsNotEmpty()
     @IsString()
-    operatorId: string;
+    operatorId: string; // ID of the target operator
 
     @IsNotEmpty()
     @IsString()
-    citizenId: string;
-
-    @IsNotEmpty()
-    @IsString()
-    data: string;
+    citizenId: string; // ID of the citizen to be transferred
 }
