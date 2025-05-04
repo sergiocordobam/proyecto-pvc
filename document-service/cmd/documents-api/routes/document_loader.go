@@ -4,6 +4,7 @@ import (
 	"document-service/cmd/documents-api/handlers"
 	"document-service/internal/infrastructure/gcp"
 	"document-service/internal/repository"
+	"fmt"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,9 +22,16 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	repo := repository.NewObjectStorageRepository(d.gcpClient)
 	handler := handlers.NewDocumentLoaderHandler(repo)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
+	d.ListRoutes()
 
 }
 func (d *DocumentLoaderRoutes) UseMiddlewares() {
 	d.router.Use(middleware.Logger)
 	d.router.Use(middleware.Recoverer)
+}
+func (d *DocumentLoaderRoutes) ListRoutes() {
+	fmt.Println("Available routes: ")
+	for _, route := range d.router.Routes() {
+		fmt.Println(route.Pattern)
+	}
 }

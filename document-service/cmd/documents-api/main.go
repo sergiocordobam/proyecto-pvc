@@ -11,21 +11,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type User struct {
-	ID uint32 `json:"id"`
-}
-
 func main() {
 
 	ctx := context.Background()
-	storageClient, err := gcp.NewStorageClient(ctx, "document-user-admin")
+	storageClient, err := gcp.NewStorageClient(ctx, "document-service-api-storage")
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	// Create a new router
 	r := chi.NewRouter()
 	router := routes.NewDocumentLoaderRoutes(r, storageClient)
+	router.UseMiddlewares()
 	router.MapRoutes()
+
 	defer storageClient.Client.Close()
 
 	// Start the server

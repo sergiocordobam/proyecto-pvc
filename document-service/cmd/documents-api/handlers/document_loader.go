@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"document-service/cmd/documents-api/validator"
+	"document-service/cmd/pkg"
 	"document-service/internal/models"
 	"document-service/internal/repository"
 	"encoding/json"
@@ -17,34 +18,31 @@ type DocumentLoaderHandler struct {
 func NewDocumentLoaderHandler(objectStorageRepository repository.ObjectStorageRepositoryInterface) *DocumentLoaderHandler {
 	return &DocumentLoaderHandler{
 		ObjectStorageRepository: objectStorageRepository,
+		reqValidator:            validator.NewReqValidator(),
 	}
 }
 func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
 		}
 
 		var uploadRequest models.UploadRequest
 		if err := json.NewDecoder(r.Body).Decode(&uploadRequest); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body")
 			return
 		}
 
 		errValidating := h.reqValidator.ValidateUserID(uploadRequest.UserID)
 		if errValidating != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": errValidating.Error()})
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID")
 			return
 		}
 
 		documents := generateDocumentStructs(uploadRequest.UserID, uploadRequest.Files)
 		err := h.ObjectStorageRepository.CreateUserDirectory(r.Context(), uploadRequest.UserID)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create directory"})
+			pkg.Error(w, http.StatusFailedDependency, "Failed to create user directory")
 			return
 		}
 
@@ -52,8 +50,7 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 		for i, document := range documents {
 			url, errObj := h.ObjectStorageRepository.GenerateUploadSignedURL(document)
 			if errObj != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Failed to generate URL"})
+				pkg.Error(w, http.StatusInternalServerError, "Failed to generate signed URL")
 				return
 			}
 			documents[i].URL = url

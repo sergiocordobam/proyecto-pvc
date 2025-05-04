@@ -25,8 +25,8 @@ func (r ReqValidator) ValidateUserID(userID int) error {
 	}
 	userIDStr := strconv.Itoa(userID)
 	cleanedUserIDStr := strings.TrimSpace(userIDStr)
-	regexiD := regexp.MustCompile(`^[0-9].{6,9}$`)
-	isOk := regexiD.MatchString(cleanedUserIDStr)
+	regexID := regexp.MustCompile(`^[0-9].{6,9}$`)
+	isOk := regexID.MatchString(cleanedUserIDStr)
 	if !isOk {
 		return errors.New(fmt.Sprintf("%s: %s", ErrInvalidUserID, userIDStr))
 	}
