@@ -3,6 +3,7 @@ from flask_cors import CORS, cross_origin
 from user_register.register import UserRegister
 from user_delete.delete import UserDelete
 from user_login.login import UserLogin
+from user_exists.exists import UserExists
 
 app = Flask(__name__)
 CORS(app)
@@ -40,6 +41,20 @@ def verify_token():
     
     response, status = login_handler.verify_token(id_token)
     return jsonify(response), status
+
+@app.route("/user_exists", methods=["POST"])
+@cross_origin()
+def user_exists():
+    data = request.get_json()
+    document_id = data.get('document_id')
+
+    if not document_id:
+        return jsonify({'error': 'Missing document_id'}), 400
+
+    user_exists_service = UserExists()
+    exists = user_exists_service.user_exists(document_id)
+
+    return jsonify({'exists': exists}), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
