@@ -4,6 +4,7 @@ import (
 	"document-service/cmd/documents-api/handlers"
 	"document-service/internal/infrastructure/gcp"
 	"document-service/internal/repository"
+	"document-service/internal/services"
 	"fmt"
 
 	"github.com/go-chi/chi/v5"
@@ -21,7 +22,8 @@ func NewDocumentLoaderRoutes(router *chi.Mux, gcpClient *gcp.StorageClient) *Doc
 }
 func (d *DocumentLoaderRoutes) MapRoutes() {
 	repo := repository.NewObjectStorageRepository(d.gcpClient)
-	handler := handlers.NewDocumentLoaderHandler(repo)
+	service := services.NewDocumentLoadService(repo)
+	handler := handlers.NewDocumentLoaderHandler(service)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
 	d.ListRoutes()
 
