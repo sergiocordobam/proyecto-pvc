@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Archivos a Cloud Storage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 40px;
+        }
+        .container {
+            max-width: 600px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            border-radius: 8px;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+        .form-control, .form-label {
+            border-radius: 8px;
+        }
+        #uploadStatus {
+            margin-top: 20px;
+        }
+        /* Estilos para los campos de archivo dinámicos */
+        .file-info-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #e9ecef;
+        }
+        .file-info-item .form-label {
+            font-weight: 500; /* Hacer el label un poco más visible */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card p-4">
+        <h2 class="card-title text-center mb-4">Subir Archivos</h2>
+        <form id="uploadForm">
+            <div class="mb-3">
+                <label for="userId" class="form-label">ID de Usuario:</label>
+                <input type="text" class="form-control" id="userId" required placeholder="Ingresa tu ID de usuario">
+            </div>
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Seleccionar Archivos:</label>
+                <input type="file" class="form-control" id="fileInput" multiple required>
+            </div>
+
+            <div id="selectedFilesContainer" class="mt-3">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">Subir Archivos</button>
+        </form>
+
+        <div id="uploadStatus" class="mt-4">
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="load_script.js"></script>
+
+</body>
+</html>

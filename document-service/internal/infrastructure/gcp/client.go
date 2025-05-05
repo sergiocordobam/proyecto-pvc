@@ -1,0 +1,105 @@
+package gcp
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
+)
+
+type StorageClient struct {
+	Client     *storage.Client
+	BucketName string
+}
+
+var (
+	singleClient *StorageClient
+	once         sync.Once
+)
+
+func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, error) {
+	var err error
+	var gcpClient *storage.Client
+	if singleClient != nil {
+		err = errors.New("gcp storage client already created")
+		return nil, err
+	}
+	once.Do(func() {
+		gcpClient, err = storage.NewClient(ctx)
+		if err != nil {
+			return
+		}
+		singleClient = &StorageClient{
+			Client:     gcpClient,
+			BucketName: BucketName,
+		}
+	},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return singleClient, nil
+}
+
+func (s *StorageClient) ReadObjectData(ctx context.Context, path string) ([]byte, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StorageClient) ObjectExists(ctx context.Context, userID int, path string) bool {
+	bkt := s.Client.Bucket(s.BucketName)
+	userIDStr := strconv.Itoa(userID)
+	folderName := fmt.Sprintf("%s/%s", userIDStr, path)
+	it := bkt.Objects(ctx, &storage.Query{Prefix: folderName})
+	_, errObject := it.Next()
+	return errors.Is(errObject, iterator.Done)
+}
+
+func (s *StorageClient) DeleteObject(ctx context.Context, path string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StorageClient) SetObjectAttributes(ctx context.Context, objectHandler *storage.ObjectHandle, attrs storage.ObjectAttrsToUpdate) error {
+	if _, err := objectHandler.Update(ctx, attrs); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StorageClient) GenerateSignedURL(filename string, method string, expirationTime time.Time) (string, error) {
+	methodMap := map[string]string{
+		"up":   "PUT",
+		"down": "GET",
+	}
+	if methodMap[method] == "" {
+		return "", fmt.Errorf("invalid method: %s", method)
+	}
+	signedConfiguration := &storage.SignedURLOptions{
+		Scheme:  storage.SigningSchemeV4,
+		Method:  methodMap[method],
+		Expires: expirationTime,
+	}
+	url, err := s.Client.Bucket(s.BucketName).SignedURL(filename, signedConfiguration)
+	if err != nil {
+		return "", fmt.Errorf("generateURL-Failed: Bucket(%q).SignedURL(%q, opts): %v", s.BucketName, filename, err)
+	}
+	return url, nil
+}
+
+func (s *StorageClient) ListObjectsWithPrefix(ctx context.Context, prefix string) ([]string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StorageClient) Close() error {
+	return s.Client.Close()
+}
+func (s *StorageClient) GetBucketPointer() *storage.BucketHandle {
+	return s.Client.Bucket(s.BucketName)
+}
