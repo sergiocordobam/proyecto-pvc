@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  interoperator-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=test
+      - API_BASE_URL=http://mock-api:3000
+      - AUTH_SERVICE_URL=http://auth-service:4000
+      - DOCUMENT_SERVICE_URL=http://document-service:5000
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - rabbitmq
+      - mock-api
+      - auth-service
+      - document-service
+    command: ["npm", "run", "test"]
+    ports:
+      - "5002:3000"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  mock-api:
+    image: mockserver/mockserver
+    ports:
+      - "3000:1080"
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+
+  document-service:
+    build:
+      context: ./document-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
