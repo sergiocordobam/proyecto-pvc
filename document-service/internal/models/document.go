@@ -5,6 +5,7 @@ import (
 )
 
 type Document struct {
+	ID       int      `json:"id"`
 	URL      string   `json:"url"`
 	Metadata Metadata `json:"metadata"`
 }

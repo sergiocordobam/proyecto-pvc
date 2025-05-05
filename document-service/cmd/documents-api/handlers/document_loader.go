@@ -6,6 +6,9 @@ import (
 	"document-service/internal/services"
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type DocumentLoaderHandler struct {
@@ -31,6 +34,31 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 		uploadResponse, err := h.Service.UploadFiles(r.Context(), uploadRequest)
 		if err != nil {
 			pkg.Error(w, uploadResponse.StatusCode, "Error in HandleDocumentUploadSignedURLRequest: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
+	}
+}
+func (h *DocumentLoaderHandler) HandleDocumentDownloadSignedURLRequest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		var fileData models.Files
+		if err := json.NewDecoder(r.Body).Decode(&fileData); err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+		}
+		userID := chi.URLParam(r, "user_id")
+
+		userIDInt, err := strconv.Atoi(userID)
+		downloadRequest := models.DownloadRequest{
+			UserID:   userIDInt,
+			FileName: fileData.FileName,
+		}
+		uploadResponse, err := h.Service.DownloadFiles(r.Context(), downloadRequest)
+		if err != nil {
+			pkg.Error(w, uploadResponse.StatusCode, "Error HandleDocumentDownloadSignedURLRequest: %s", err.Error())
 			return
 		}
 

@@ -25,6 +25,7 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	service := services.NewDocumentLoadService(repo)
 	handler := handlers.NewDocumentLoaderHandler(service)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
+	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())
 	d.ListRoutes()
 
 }
