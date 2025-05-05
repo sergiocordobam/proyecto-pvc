@@ -1,5 +1,13 @@
-FROM python:3.9
+FROM python:3.12
+
 WORKDIR /app
-COPY app_auth_service.py .
-RUN pip install flask
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
 CMD ["python", "app_auth_service.py"]
