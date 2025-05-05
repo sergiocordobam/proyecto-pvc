@@ -49,13 +49,29 @@ export class CitizenService {
     }
 
     @EventPattern('delete_citizen')
-    async deleteCitizen(@Payload() data: { citizenId: string }): Promise<void> {
+    async deleteCitizen(@Payload() data: { document_id: string }): Promise<void> {
+        const { document_id } = data;
+    
+        if (!document_id) {
+            console.error('Document ID is missing in the payload');
+            throw new Error('Document ID is required');
+        }
+    
         try {
-            console.log(`Deleting citizen with ID: ${data.citizenId}`);
-            await axios.delete(`${this.authServiceUrl}/citizens/${data.citizenId}`);
+            console.log(`Deleting user with document ID: ${document_id}`);
+            const response = await axios.delete(`${this.authServiceUrl}/delete_user`, {
+                data: { document_id },
+            });
+    
+            if (response.status === 200) {
+                console.log(`User with document ID ${document_id} deleted successfully`);
+            } else {
+                console.error(`Failed to delete user with document ID ${document_id}. Status: ${response.status}`);
+                throw new Error(`Failed to delete user with document ID ${document_id}`);
+            }
         } catch (error) {
-            console.error(`Error deleting citizen: ${error.message}`);
-            throw new Error(`Error deleting citizen: ${error.message}`);
+            console.error(`Error deleting user with document ID ${document_id}: ${error.message}`);
+            throw new Error(`Error deleting user: ${error.message}`);
         }
     }
 }
