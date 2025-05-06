@@ -71,9 +71,11 @@ func (d DocumentLoadService) GetDocumentData(userID int, documentName string) (m
 	panic("implement me")
 }
 
-func (d DocumentLoadService) GetUserDocuments(userID int) (models.Document, error) {
-	//TODO implement me
-	panic("implement me")
+func (d *DocumentLoadService) GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error) {
+	if err := d.validator.ValidateUserID(userID); err != nil {
+		return []models.Document{}, err
+	}
+	return d.repository.GetUserDocuments(ctx, userID)
 }
 func (d *DocumentLoadService) callDocumentsURL(userID int, fileUploadInfo []models.FileUploadInfo) []models.SignedUrlInfo {
 	var wg sync.WaitGroup
@@ -120,7 +122,7 @@ func (d *DocumentLoadService) callDocumentsURLDownload(userID int, fileNames []s
 			var errObj error
 			var expirationTime time.Time
 			document := models.NewDocument(name, EmptyStr, EmptyStr, 0, userID)
-			url, expirationTime, errObj = d.repository.GenerateUploadSignedURL(document)
+			url, expirationTime, errObj = d.repository.GenerateDownloadSignedURL(document)
 
 			if errObj != nil {
 				return

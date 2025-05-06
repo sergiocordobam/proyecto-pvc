@@ -92,9 +92,25 @@ func (s *StorageClient) GenerateSignedURL(filename string, method string, expira
 	return url, nil
 }
 
-func (s *StorageClient) ListObjectsWithPrefix(ctx context.Context, prefix string) ([]string, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *StorageClient) ListObjectsWithPrefix(ctx context.Context, prefix string) ([]storage.ObjectAttrs, error) {
+	query := &storage.Query{
+		Prefix: prefix,
+	}
+	objectIterator := s.Client.Bucket(s.BucketName).Objects(ctx, query)
+	objectInfoList := make([]storage.ObjectAttrs, 0)
+	for {
+		objAttrs, err := objectIterator.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error iterating bucket objects: %w", err)
+		}
+
+		objectInfoList = append(objectInfoList, *objAttrs)
+	}
+
+	return objectInfoList, nil
 }
 
 func (s *StorageClient) Close() error {

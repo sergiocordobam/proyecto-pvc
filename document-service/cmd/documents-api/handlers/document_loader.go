@@ -65,3 +65,23 @@ func (h *DocumentLoaderHandler) HandleDocumentDownloadSignedURLRequest() http.Ha
 		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
 	}
 }
+func (h *DocumentLoaderHandler) HandleDocumentsListByUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, err := strconv.Atoi(userID)
+		if err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", err.Error())
+			return
+		}
+		documents, err := h.Service.GetUserDocuments(r.Context(), userIDInt)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleGetAllUserDocumentsData: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, documents)
+	}
+}

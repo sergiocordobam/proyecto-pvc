@@ -1,12 +1,12 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
 type Document struct {
-	ID       int      `json:"id"`
-	URL      string   `json:"url"`
+	URL      string   `json:"url",omitempty`
 	Metadata Metadata `json:"metadata"`
 }
 type Metadata struct {
@@ -30,6 +30,7 @@ func NewDocument(name, documentType, contentType string, size, ownerId int) Docu
 			Type:         documentType,
 			CreationDate: currentDate,
 			ContentType:  contentType,
+			AbsPath:      fmt.Sprintf("%d/%s", ownerId, name),
 		},
 	}
 }
