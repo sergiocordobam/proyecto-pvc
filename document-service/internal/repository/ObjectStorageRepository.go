@@ -20,24 +20,24 @@ func NewObjectStorageRepository(client gcp.StorageClientInterface) *ObjectStorag
 	return &ObjectStorageRepository{gcpclient: client}
 }
 
-func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Document) (string, error) {
+func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Document) (string, time.Time, error) {
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
-	url, err := o.gcpclient.GenerateSignedURL(fmt.Sprintf("%d/%s", document.Metadata.OwnerID, document.Metadata.Name), "up", expiryTime)
+	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "up", expiryTime)
 	if err != nil {
-		return "", err
+		return "", time.Time{}, err
 	}
-	return url, nil
+	return url, expiryTime, nil
 }
-func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Document) (string, error) {
-	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.AbsPath) {
-		return "", errors.New("object not found")
+func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Document) (string, time.Time, error) {
+	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.Name) {
+		return "", time.Time{}, errors.New("object not found")
 	}
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
-	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.Name, "down", expiryTime)
+	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "down", expiryTime)
 	if err != nil {
-		return "", err
+		return "", expiryTime, err
 	}
-	return url, nil
+	return url, expiryTime, nil
 }
 
 func (o *ObjectStorageRepository) GetDocumentData(ctx context.Context, userID int, documentName string) (models.Document, error) {
@@ -45,9 +45,25 @@ func (o *ObjectStorageRepository) GetDocumentData(ctx context.Context, userID in
 	panic("implement me")
 }
 
-func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID int) (models.Document, error) {
-	//TODO implement me
-	panic("implement me")
+func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error) {
+	userDocumentsList := make([]models.Document, 0)
+	objListAttributes, err := o.gcpclient.ListObjectsWithPrefix(ctx, fmt.Sprintf("%d/", userID))
+	if err != nil {
+		return userDocumentsList, err
+	}
+	for _, obj := range objListAttributes {
+		userDocumentsList = append(userDocumentsList, models.Document{
+			Metadata: models.Metadata{
+				Name:         obj.Name,
+				OwnerID:      userID,
+				ContentType:  obj.ContentType,
+				Size:         int(obj.Size),
+				CreationDate: obj.Created,
+				AbsPath:      obj.Name,
+			},
+		})
+	}
+	return userDocumentsList, nil
 }
 
 func (o *ObjectStorageRepository) CreateUserDirectory(ctx context.Context, userID int) error {

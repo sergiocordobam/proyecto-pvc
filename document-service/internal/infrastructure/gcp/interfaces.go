@@ -13,7 +13,7 @@ type StorageClientInterface interface {
 	DeleteObject(ctx context.Context, path string) error
 	SetObjectAttributes(ctx context.Context, objectHandler *storage.ObjectHandle, attrs storage.ObjectAttrsToUpdate) error
 	GenerateSignedURL(path string, method string, expiry time.Time) (string, error)
-	ListObjectsWithPrefix(ctx context.Context, prefix string) ([]string, error)
+	ListObjectsWithPrefix(ctx context.Context, prefix string) ([]storage.ObjectAttrs, error)
 	GetBucketPointer() *storage.BucketHandle
 	Close() error
 }
