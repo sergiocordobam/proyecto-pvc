@@ -8,23 +8,23 @@ services:
         paths:
           - /auth
 
-  - name: document_service
-    url: http://document-service:8080
-    routes:
-      - name: document_service_route
-        paths:
-          - /docs
+  # - name: document_service
+  #   url: http://document-service:8080
+  #   routes:
+  #     - name: document_service_route
+  #       paths:
+  #         - /docs
 
-  - name: notification_service
-    url: http://notification-service:5001
-    routes:
-      - name: notification_service_route
-        paths:
-          - /notify
+  # - name: notification_service
+  #   url: http://notification-service:5001
+  #   routes:
+  #     - name: notification_service_route
+  #       paths:
+  #         - /notify
 
-  - name: interoperator_service
-    url: http://interoperator-service:5002
-    routes:
-      - name: interoperator_service_route
-        paths:
-          - /interop
+  # - name: interoperator_service
+  #   url: http://interoperator-service:5002
+  #   routes:
+  #     - name: interoperator_service_route
+  #       paths:
+  #         - /interop
