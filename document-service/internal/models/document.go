@@ -6,7 +6,7 @@ import (
 )
 
 type Document struct {
-	URL      string   `json:"url",omitempty`
+	URL      string   `json:"url,omitempty"`
 	Metadata Metadata `json:"metadata"`
 }
 type Metadata struct {

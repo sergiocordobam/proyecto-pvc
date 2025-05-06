@@ -59,6 +59,7 @@ func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID i
 				ContentType:  obj.ContentType,
 				Size:         int(obj.Size),
 				CreationDate: obj.Created,
+				AbsPath:      obj.Name,
 			},
 		})
 	}
