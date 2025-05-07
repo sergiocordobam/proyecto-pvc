@@ -9,7 +9,7 @@ describe('OperatorRegistrationService', () => {
   let service: OperatorRegistrationService;
 
   beforeEach(() => {
-    service = new OperatorRegistrationService('http://localhost:3000');
+    service = new OperatorRegistrationService();
     jest.clearAllMocks();
   });
 

@@ -10,37 +10,43 @@ services:
       - API_BASE_URL=http://mock-api:3000
       - AUTH_SERVICE_URL=http://auth-service:4000
       - DOCUMENT_SERVICE_URL=http://document-service:5000
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://rabbitmq:5672   # Update to the internal RabbitMQ service URL
     depends_on:
       - rabbitmq
       - mock-api
       - auth-service
       - document-service
-    command: ["npm", "run", "test"]
+    command: ["npm", "run"]
     ports:
-      - "5002:3000"
+      - "5002:3000"   # Expose service on port 5002
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management  # RabbitMQ with management UI
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # HTTP management console
+    networks:
+      - app-network
 
   mock-api:
     image: mockserver/mockserver
     ports:
-      - "3000:1080"
+      - "3000:1080"   # Expose mock API
 
   auth-service:
     build:
-      context: ./auth-service
+      context: ../auth-service
       dockerfile: Dockerfile
     ports:
-      - "4000:4000"
+      - "4000:4000"   # Expose authentication service
 
   document-service:
     build:
-      context: ./document-service
+      context: ../document-service
       dockerfile: Dockerfile
     ports:
-      - "5000:8080"
+      - "5000:8080"   # Expose document service
+
+networks:
+  app-network:
+    driver: bridge

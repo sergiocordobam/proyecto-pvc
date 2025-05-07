@@ -40,9 +40,12 @@ export class OperatorController {
         try {
             const operatorName = process.env.OPERATOR_NAME!;
             const operator = await this.fetchService.getOperatorByName(operatorName);
-
             if (operator) {
                 console.log(`Operator ${operatorName} already exists.`);
+                const registeredOperator = await this.fetchService.getSelfOperator();
+                console.log(`token: ${registeredOperator._id}`);
+                this.tokenService.saveToken(registeredOperator._id);
+                console.log(`token saved: ${process.env.OPERATOR_ID}`)
             } else {
                 console.log(`Operator ${operatorName} does not exist. Registering...`);
                 const operatorData = {
@@ -63,6 +66,7 @@ export class OperatorController {
                     endPointConfirm: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM,
                 } as RegisterEndpointDto;
                 this.registrationService.registerEndPoint(endpointData);
+                console.log(`token: ${registeredOperator}`);
             }
             console.log(`Operator ${operatorName} registered successfully.`);
         } catch (error) {

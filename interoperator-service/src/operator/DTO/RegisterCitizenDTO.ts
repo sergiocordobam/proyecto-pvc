@@ -12,4 +12,7 @@ export class RegisterCitizenDto {
 
     @IsObject()
     urlDocuments: Record<string, string[]>;
+
+    @IsString()
+    confirmAPI: string;
 }

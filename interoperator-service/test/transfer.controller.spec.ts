@@ -50,6 +50,7 @@ describe('TransferController', () => {
         national: ['doc1'],
         extra: ['doc2'],
       },
+      confirmAPI: 'http://confirm-api.com',
     };
 
     const result = await controller.registerCitizen(payload);

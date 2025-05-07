@@ -36,7 +36,6 @@ import { RegisterCitizenDto } from '../DTO/RegisterCitizenDTO';
 @Controller('transfers')
 export class TransferController {
     constructor(private readonly transferService: TransferService) {}
-
     @Post('confirm-citizen-transfer')
     @HttpCode(HttpStatus.OK)
     async confirmCitizenTransfer(@Body() dto: ConfirmTransferDto): Promise<any> {

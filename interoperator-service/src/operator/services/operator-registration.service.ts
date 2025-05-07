@@ -9,6 +9,7 @@ export class OperatorRegistrationService {
 
     async registerOperator(dto: RegisterOperatorDto): Promise<any> {
         try {
+            console.log(`${this.apiUrl}/registerOperator`);
             const response = await axios.post(`${this.apiUrl}/registerOperator`, dto);
             return response.data;
         } catch (error) {

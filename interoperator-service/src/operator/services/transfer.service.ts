@@ -1,111 +1,6 @@
-/*import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import axios from 'axios';
-import { OperatorFetchService } from './operator-fetch.service';
-import { CitizenService } from './Auth-service-Conection';
-import { DocumentService } from './Documents-service-conection';
-import { TransferCitizenDto } from '../DTO/TransferCitizenDto';
-import { ConfirmTransferDto } from '../DTO/ConfirmTransferDto';
-import { TransferRequestDto } from '../DTO/TransferRequestDto';
-
-@Injectable()
-export class TransferService {
-    constructor(
-        private readonly fetchService: OperatorFetchService,
-        private readonly citizenService: CitizenService,
-        private readonly documentService: DocumentService,
-    ) {}
-
-    private async getOperatorUrl(operatorId: string): Promise<string> {
-        const operator = await this.fetchService.getOperatorById(operatorId);
-
-        if (!operator || !operator.transferAPIURL) {
-            throw new HttpException(
-                `Interop URL not found for operator with ID: ${operatorId}`,
-                HttpStatus.NOT_FOUND,
-            );
-        }
-
-        return operator.transferAPIURL;
-    }
-
-    async transferCitizen(dto: TransferCitizenDto): Promise<any> {
-        try {
-            // Fetch citizen info and document URLs
-            const citizenInfo = await this.citizenService.fetchCitizenInfo(dto.citizenId);
-            const documentUrls = await this.documentService.fetchDocumentUrls(dto.citizenId);
-
-            // Combine data
-            const payload = {
-                id: dto.citizenId,
-                citizenName: citizenInfo.name,
-                citizenEmail: citizenInfo.email,
-                urlDocuments: documentUrls,
-            };
-
-            // Get the target operator's URL
-            const interopUrl = await this.getOperatorUrl(dto.operatorId);
-
-            // Send the combined data to the target operator
-            const response = await axios.post(`${interopUrl}/transfer`, payload);
-            return response.data;
-        } catch (error) {
-            throw new HttpException(
-                `Error transferring citizen: ${error.message}`,
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-
-    async confirmTransfer(dto: ConfirmTransferDto): Promise<any> {
-        try {
-            const interopUrl = await this.getOperatorUrl(dto.operatorId);
-            const response = await axios.post(`${interopUrl}/confirm`, {
-                transferId: dto.transferId,
-                status: dto.status,
-            });
-
-            // If the confirmation is successful and the status is "confirmed"
-            if (response.status === 200 && dto.status === 'confirmed') {
-                await this.citizenService.deleteCitizen(dto.transferId);
-                await this.documentService.deleteDocuments(dto.transferId);
-            }
-
-            return response.data;
-        } catch (error) {
-            throw new HttpException(
-                `Error confirming transfer: ${error.message}`,
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-    async processTransfer(dto: TransferRequestDto): Promise<any> {
-        try {
-            const userInfo = await this.citizenService.fetchCitizenInfo(dto.userId);
-            const userDocuments = await this.documentService.fetchDocumentUrls(dto.userId);
-
-            const confirmation = {
-                userId: dto.userId,
-                userInfo,
-                userDocuments,
-            };
-
-            return {
-                success: true,
-                message: 'Transfer processed successfully',
-                confirmation,
-            };
-        } catch (error) {
-            throw new HttpException(
-                `Error processing transfer: ${error.message}`,
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-        }
-    }
-}*/
-
-import { Injectable,HttpException, HttpStatus,Inject } from '@nestjs/common';
+import { Injectable,HttpException, HttpStatus,Inject, Body } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+import { ClientProxy, ClientProxyFactory, Transport, MessagePattern} from '@nestjs/microservices';
 import { async, firstValueFrom } from 'rxjs';
 import { OperatorFetchService } from './operator-fetch.service';
 import axios from 'axios';
@@ -114,16 +9,23 @@ import { RegisterCitizenDto } from '../DTO/RegisterCitizenDTO';
 
 @Injectable()
 export class TransferService {
-
+    private readonly apiUrl : string;
+    private readonly selfId : string;
+    private readonly selfName: string;
     constructor(
         @Inject('DELETE_CITIZEN_CLIENT') private readonly deleteCitizenClient: ClientProxy,
         @Inject('DELETE_DOCUMENTS_CLIENT') private readonly deleteDocumentsClient: ClientProxy,
         @Inject('REGISTER_CITIZEN_CLIENT') private readonly registerCitizenClient: ClientProxy,
         @Inject('REGISTER_DOCUMENTS_CLIENT') private readonly registerDocumentsClient: ClientProxy,
         private readonly fetchService: OperatorFetchService,
-    ) {}
+
+    ) {
+        this.apiUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+        this.selfId = process.env.OPERATOR_ID || '1';
+        this.selfName = process.env.OPERATOR_NAME || 'Operator1';
+    }
      // Listen to the 'transfer_requests' queue
-    async processTransfer(@Payload() message: any): Promise<void> {
+    async processTransfer(@Body() message: any): Promise<void> {
         try {
             const { citizenId, operatorId } = message;
     
@@ -136,13 +38,18 @@ export class TransferService {
             const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/${citizenId}/all`);
             const documentUrls = documentUrlsResponse.data.files;
             console.log(`Fetched document URLs:`, documentUrls);
-    
+            
+            const formattedUrls = documentUrls.reduce((acc, url, index) => {
+                acc[`URL${index + 1}`] = url;
+                return acc;
+            }, {});
             // Format the payload to match the required structure
+            console.log(`Formatted URLs:`, formattedUrls);
             const payload = {
                 id: citizenId,
                 citizenName: citizenInfo.name,
                 citizenEmail: citizenInfo.email,
-                urlDocuments: documentUrls,
+                urlDocuments: formattedUrls,
                 confirmAPI: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM, 
             };
     
@@ -151,6 +58,14 @@ export class TransferService {
             console.log(`Fetched operator URL: ${operatorUrl}`);
     
             // Send the payload to the receiving operator's queue via RabbitMQ
+            const unregisterCitizen = {
+                id: citizenId,
+                operatorId: this.selfId,
+                operatorName: this.selfName,
+            }
+            await axios.delete(`${this.apiUrl}/unregisterCitizen`, {
+                data: unregisterCitizen,
+            });
 
             await axios.post(operatorUrl, payload);
     
@@ -174,37 +89,31 @@ export class TransferService {
 
     async confirmTransfer(dto: any): Promise<any> {
         try {
-            const { operatorId, transferId, status } = dto;
+            const { id, req_status } = dto;
 
-/*            // Send confirmation to the operator
-            const response = await firstValueFrom(
-                this.transferConfirmationsClient.send('confirm_transfer', { operatorId, transferId, status }),
-            );
+            if (req_status === 1) {
 
-            // If the confirmation is successful and the status is "confirmed"
-            if (response.status === 200 && status === 'confirmed') {*/
-                // Delete citizen via RabbitMQ
-            // Delete citizen via RabbitMQ
-            this.deleteCitizenClient.emit('delete_citizen', {
-                citizenId: transferId,
-            });
+                this.deleteCitizenClient.emit('delete_citizen_queue', {
+                    citizenId: id,
+                });
 
-            // Delete documents via RabbitMQ
-            this.deleteDocumentsClient.emit('delete_documents', {
-                citizenId: transferId,
-            });
+                // Delete documents via RabbitMQ
+                this.deleteDocumentsClient.emit('delete_documents_queue', {
+                    citizenId: id
+                });
+            }
         } catch (error) {
             console.error(`Error confirming transfer: ${error.message}`);
             throw new Error(`Error confirming transfer: ${error.message}`);
         }
     }
 
-    async registerCitizenAndDocuments(payload: RegisterCitizenDto): Promise<void> {
+    async registerCitizenAndDocuments(request: RegisterCitizenDto): Promise<void> {
         try {
-            const { id, citizenName, citizenEmail, urlDocuments,  } = payload;
+            const { id, citizenName, citizenEmail, urlDocuments,  confirmAPI} = request;
 
             // Register the citizen in the Auth Service
-            this.registerCitizenClient.emit('register_citizen', {
+            this.registerCitizenClient.emit('register_citizen_queue', {
                 full_name: citizenName,
                 document_id: id,    
                 email: citizenEmail,
@@ -217,13 +126,27 @@ export class TransferService {
             const flatUrls = Object.values(urlDocuments).flat();
 
             // Send document URLs to the Document Service
-            this.registerDocumentsClient.emit('register_documents', {
+            this.registerDocumentsClient.emit('register_documents_queue', {
                 citizenId: id,
                 documents: flatUrls,
             });
             console.log(`Documents registered successfully`);
             
+            const confirmation = {
+                id: id, 
+                req_status : 1,
+            };
+
+            await axios.post(confirmAPI, confirmation);
         } catch (error) {
+            const { id, confirmAPI} = request;
+            const confirmation = {
+                id: id, 
+                req_status : 0,
+            };
+
+            await axios.post(confirmAPI, confirmation);
+
             console.error(`Error registering citizen and documents: ${error.message}`);
             throw new Error(`Error registering citizen and documents: ${error.message}`);
         }
