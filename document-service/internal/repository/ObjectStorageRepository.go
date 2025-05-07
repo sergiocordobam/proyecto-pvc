@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"document-service/internal/infrastructure/gcp"
+	"document-service/internal/infrastructure/apis/gcp"
 	"document-service/internal/models"
 	"errors"
 	"fmt"
@@ -38,11 +38,6 @@ func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Docu
 		return "", expiryTime, err
 	}
 	return url, expiryTime, nil
-}
-
-func (o *ObjectStorageRepository) GetDocumentData(ctx context.Context, userID int, documentName string) (models.Document, error) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error) {
