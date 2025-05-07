@@ -18,7 +18,7 @@ services:
       - ./kong/kong.yml:/kong/kong.yml
     depends_on:
       - auth-service
-      # - document-service
+      - document-service
       # - notification-service
       # - interoperator-service
 
@@ -27,10 +27,10 @@ services:
     ports:
       - "6000:5000"
 
-  # document-service:
-  #   build: ./document-service
-  #   ports:
-  #     - "9080:8080"
+  document-service:
+    build: ./document-service
+    ports:
+      - "9080:8080"
 
   # notification-service:
   #   build: ./notification-service

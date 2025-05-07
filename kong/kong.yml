@@ -8,12 +8,12 @@ services:
         paths:
           - /auth
 
-  # - name: document_service
-  #   url: http://document-service:8080
-  #   routes:
-  #     - name: document_service_route
-  #       paths:
-  #         - /docs
+  - name: document_service
+    url: http://document-service:8080
+    routes:
+      - name: document_service_route
+        paths:
+          - /docs
 
   # - name: notification_service
   #   url: http://notification-service:5001
