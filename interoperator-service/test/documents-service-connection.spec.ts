@@ -1,4 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentService } from '../src/operator/services/Documents-service-conection';
 import axios from 'axios';
 
@@ -6,34 +5,48 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('DocumentService', () => {
-    let documentService: DocumentService;
+  let service: DocumentService;
 
-    beforeEach(async () => {
-        // Mock the environment variable
-        process.env.DOCUMENT_SERVICE_URL = 'http://localhost:5000';
+  beforeEach(() => {
+    service = new DocumentService();
+    jest.clearAllMocks();
+  });
 
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [DocumentService],
-        }).compile();
+  describe('fetchDocumentUrls', () => {
+    it('should return document URLs when axios call is successful', async () => {
+      const mockData = { urls: ['doc1.pdf', 'doc2.pdf'] };
+      mockedAxios.get.mockResolvedValueOnce({ data: mockData });
 
-        documentService = module.get<DocumentService>(DocumentService);
+      const result = await service.fetchDocumentUrls({ citizenId: '123' });
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:5000/documents/123');
+      expect(result).toEqual(mockData);
     });
 
-    it('should fetch document URLs', async () => {
-        const mockResponse = { data: ['http://example.com/doc1', 'http://example.com/doc2'] };
-        mockedAxios.get.mockResolvedValue(mockResponse);
+    it('should throw an error if axios call fails', async () => {
+      mockedAxios.get.mockRejectedValueOnce(new Error('Network error'));
 
-        const result = await documentService.fetchDocumentUrls({ citizenId: '123' });
+      await expect(service.fetchDocumentUrls({ citizenId: '123' }))
+        .rejects
+        .toThrow('Error fetching document URLs: Network error');
+    });
+  });
 
-        expect(mockedAxios.get).toHaveBeenCalledWith(`${process.env.DOCUMENT_SERVICE_URL}/documents/123`);
-        expect(result).toEqual(mockResponse.data);
+  describe('deleteDocuments', () => {
+    it('should call axios.delete with correct URL', async () => {
+      mockedAxios.delete.mockResolvedValueOnce({});
+
+      await service.deleteDocuments({ citizenId: '456' });
+
+      expect(mockedAxios.delete).toHaveBeenCalledWith('http://localhost:5000/documents/456');
     });
 
-    it('should delete documents', async () => {
-        mockedAxios.delete.mockResolvedValue({});
+    it('should throw an error if axios.delete fails', async () => {
+      mockedAxios.delete.mockRejectedValueOnce(new Error('Delete failed'));
 
-        await documentService.deleteDocuments({ citizenId: '123' });
-
-        expect(mockedAxios.delete).toHaveBeenCalledWith(`${process.env.DOCUMENT_SERVICE_URL}/documents/123`);
+      await expect(service.deleteDocuments({ citizenId: '456' }))
+        .rejects
+        .toThrow('Error deleting documents: Delete failed');
     });
+  });
 });

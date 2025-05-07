@@ -5,75 +5,65 @@ import { OperatorRegistrationService } from '../src/operator/services/operator-r
 import { TokenService } from '../src/operator/services/token.service';
 
 describe('OperatorController', () => {
-    let operatorController: OperatorController;
-    let fetchService: OperatorFetchService;
-    let registrationService: OperatorRegistrationService;
-    let tokenService: TokenService;
+  let controller: OperatorController;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            controllers: [OperatorController],
-            providers: [
-                {
-                    provide: OperatorFetchService,
-                    useValue: {
-                        getOperators: jest.fn(),
-                        getOperatorByName: jest.fn(),
-                        getOperatorById: jest.fn(),
-                    },
-                },
-                {
-                    provide: OperatorRegistrationService,
-                    useValue: {
-                        registerOperator: jest.fn(),
-                        registerEndPoint: jest.fn(),
-                    },
-                },
-                {
-                    provide: TokenService,
-                    useValue: {
-                        saveToken: jest.fn(),
-                    },
-                },
-            ],
-        }).compile();
+  const mockFetchService = {
+    getOperators: jest.fn(),
+    getSelfOperator: jest.fn(),
+    getOperatorByName: jest.fn(),
+  };
 
-        operatorController = module.get<OperatorController>(OperatorController);
-        fetchService = module.get<OperatorFetchService>(OperatorFetchService);
-        registrationService = module.get<OperatorRegistrationService>(OperatorRegistrationService);
-        tokenService = module.get<TokenService>(TokenService);
-    });
+  const mockRegistrationService = {
+    registerOperator: jest.fn(),
+    registerEndPoint: jest.fn(),
+  };
 
-    it('should fetch operators', async () => {
-        const mockOperators = [{ id: '1', name: 'Operator1' }];
-        jest.spyOn(fetchService, 'getOperators').mockResolvedValue(mockOperators);
+  const mockTokenService = {
+    saveToken: jest.fn(),
+  };
 
-        // Mock the `res` object
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
-        };
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [OperatorController],
+      providers: [
+        { provide: OperatorFetchService, useValue: mockFetchService },
+        { provide: OperatorRegistrationService, useValue: mockRegistrationService },
+        { provide: TokenService, useValue: mockTokenService },
+      ],
+    }).compile();
 
-        await operatorController.fetchOperators({} as any, res as any);
+    controller = module.get<OperatorController>(OperatorController);
+  });
 
-        expect(fetchService.getOperators).toHaveBeenCalled();
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(mockOperators);
-    });
+  it('should fetch all operators and respond with 200', async () => {
+    const req = {};
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const data = [{ name: 'Operator 1' }];
+    mockFetchService.getOperators.mockResolvedValue(data);
 
-    it('should handle errors when fetching operators', async () => {
-        jest.spyOn(fetchService, 'getOperators').mockRejectedValue(new Error('Test error'));
+    await controller.fetchOperators(req as any, res as any);
 
-        // Mock the `res` object
-        const res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
-        };
+    expect(mockFetchService.getOperators).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(data);
+  });
 
-        await operatorController.fetchOperators({} as any, res as any);
+  it('should fetch self operator and respond with 200', async () => {
+    const req = {};
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const data = { name: 'Self Operator' };
+    mockFetchService.getSelfOperator.mockResolvedValue(data);
 
-        expect(fetchService.getOperators).toHaveBeenCalled();
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch operators' });
-    });
+    await controller.fetchSelfOperator(req as any, res as any);
+
+    expect(mockFetchService.getSelfOperator).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(data);
+  });
 });

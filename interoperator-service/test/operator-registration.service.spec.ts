@@ -1,44 +1,49 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { OperatorRegistrationService } from '../src/operator/services/operator-registration.service';
 import axios from 'axios';
-
+import { RegisterOperatorDto } from '../src/operator/DTO/RegisterOperatorDto';
+import { RegisterEndpointDto } from '../src/operator/DTO/RegisterEndpointDto';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('OperatorRegistrationService', () => {
-    let registrationService: OperatorRegistrationService;
+  let service: OperatorRegistrationService;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                OperatorRegistrationService,
-                {
-                    provide: 'API_URL',
-                    useValue: process.env.API_BASE_URL,
-                },
-            ],
-        }).compile();
+  beforeEach(() => {
+    service = new OperatorRegistrationService('http://localhost:3000');
+    jest.clearAllMocks();
+  });
 
-        registrationService = module.get<OperatorRegistrationService>(OperatorRegistrationService);
+  describe('registerOperator', () => {
+    it('should post data to /registerOperator and return response', async () => {
+      const dto: RegisterOperatorDto = { name: 'Alpha', address:'test', contactMail:'a@a.com', participants: ['a', 'b'] };
+      const mockResponse = { success: true, id: 'op-123' };
+      mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await service.registerOperator(dto);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith('http://localhost:3000/registerOperator', dto);
+      expect(result).toEqual(mockResponse);
     });
 
-    it('should register an operator', async () => {
-        const mockDto = { name: 'Operator1', address: 'Address1', contactMail: 'test@example.com', participants: [] };
-        const mockResponse = { id: '1' };
-        mockedAxios.post.mockResolvedValue({ data: mockResponse });
+    it('should throw error when registration fails', async () => {
+      mockedAxios.post.mockRejectedValueOnce(new Error('Post failed'));
 
-        const result = await registrationService.registerOperator(mockDto);
-
-        expect(mockedAxios.post).toHaveBeenCalledWith(`${process.env.API_BASE_URL}/registerOperator`, mockDto);
-        expect(result).toEqual(mockResponse);
+      await expect(service.registerOperator({ name: 'Beat', address:'test1', contactMail:'b@b.com', participants: ['c', 'd'] } as RegisterOperatorDto))
+        .rejects
+        .toThrow('Error registering operator: Post failed');
     });
+  });
 
-    it('should register an endpoint', async () => {
-        const endpointData = { idOperator: '1', endPoint: 'http://example.com', endPointConfirm: 'http://example.com/confirm' };
-        mockedAxios.post.mockResolvedValue({ data: {} });
+  describe('registerEndPoint', () => {
+    it('should post data to /registerTransferEndPoint and return response', async () => {
+      const endpointData = { idOperator: '123', endPoint: 'http://endpoint.com',endPointConfirm:'http://endpoint.com/confirm' } as RegisterEndpointDto; ;
+      const mockResponse = { status: 'ok' };
+      mockedAxios.post.mockResolvedValueOnce({ data: mockResponse });
 
-        await registrationService.registerEndPoint(endpointData);
+      const result = await service.registerEndPoint(endpointData);
 
-        expect(mockedAxios.post).toHaveBeenCalledWith(`${process.env.API_BASE_URL}/registerTransferEndPoint`, endpointData);
+      expect(mockedAxios.post).toHaveBeenCalledWith('http://localhost:3000/registerTransferEndPoint', endpointData);
+      expect(result).toEqual(mockResponse);
     });
+  });
 });

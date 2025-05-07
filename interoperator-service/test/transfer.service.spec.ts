@@ -1,56 +1,61 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { TransferService } from '../src/operator/services/transfer.service';
-import { ClientProxyFactory } from '@nestjs/microservices';
-import { of } from 'rxjs';
+import { OperatorFetchService } from '../src/operator/services/operator-fetch.service';
+import axios from 'axios';
 
-jest.mock('@nestjs/microservices', () => ({
-    ...jest.requireActual('@nestjs/microservices'),
-    ClientProxyFactory: {
-        create: jest.fn(() => ({
-            send: jest.fn(),
-            emit: jest.fn(),
-        })),
-    },
-}));
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('TransferService', () => {
-    let transferService: TransferService;
+  let service: TransferService;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [TransferService],
-        }).compile();
+  const mockDeleteCitizenClient = { emit: jest.fn() };
+  const mockDeleteDocumentsClient = { emit: jest.fn() };
+  const mockRegisterCitizenClient = { emit: jest.fn() };
+  const mockRegisterDocumentsClient = { emit: jest.fn() };
 
-        transferService = module.get<TransferService>(TransferService);
+  const mockFetchService = {
+    getOperatorById: jest.fn().mockResolvedValue({ transferAPIURL: 'http://operator-url.com' }),
+  } as unknown as OperatorFetchService;
 
-        // Mock the send and emit methods for all ClientProxy instances
-        jest.spyOn(transferService['fetchCitizenInfoClient'], 'send').mockReturnValue(
-            of({ name: 'John Doe', email: 'john.doe@example.com' }),
-        );
-        jest.spyOn(transferService['fetchDocumentUrlsClient'], 'send').mockReturnValue(
-            of(['http://example.com/doc1', 'http://example.com/doc2']),
-        );
-        jest.spyOn(transferService['transferConfirmationsClient'], 'emit').mockReturnValue(
-            of(null),
-        );
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    service = new TransferService(
+      mockDeleteCitizenClient as any,
+      mockDeleteDocumentsClient as any,
+      mockRegisterCitizenClient as any,
+      mockRegisterDocumentsClient as any,
+      mockFetchService
+    );
+  });
+
+  it('should fetch info and post to operator successfully', async () => {
+    mockedAxios.get.mockImplementation((url) => {
+      if (url.includes('citizen-info')) {
+        return Promise.resolve({ data: { name: 'John', email: 'john@email.com' } });
+      }
+      if (url.includes('documents')) {
+        return Promise.resolve({ data: ['doc1.pdf', 'doc2.pdf'] });
+      }
+      return Promise.reject(new Error('Unknown URL'));
     });
 
-    it('should process transfer', async () => {
-        const mockMessage = { citizenId: '123', operatorId: 'op1' };
+    mockedAxios.post.mockResolvedValue({ data: { success: true } });
 
-        await transferService.processTransfer(mockMessage);
+    const dto = { citizenId: '123', operatorId: '456' };
 
-        expect(transferService['fetchCitizenInfoClient'].send).toHaveBeenCalledWith(
-            'fetch_citizen_info',
-            { citizenId: '123' },
-        );
-        expect(transferService['fetchDocumentUrlsClient'].send).toHaveBeenCalledWith(
-            'fetch_document_urls',
-            { citizenId: '123' },
-        );
-        expect(transferService['transferConfirmationsClient'].emit).toHaveBeenCalledWith(
-            'transfer_confirmations',
-            { transferId: '123', status: 'confirmed' },
-        );
-    });
+    await service.processTransfer(dto);
+
+    expect(mockedAxios.get).toHaveBeenCalledWith(expect.stringContaining('citizen-info/123'));
+    expect(mockedAxios.get).toHaveBeenCalledWith(expect.stringContaining('documents/123'));
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      'http://operator-url.com',
+      expect.objectContaining({
+        id: '123',
+        citizenName: 'John',
+        citizenEmail: 'john@email.com',
+        urlDocuments: ['doc1.pdf', 'doc2.pdf'],
+      })
+    );
+  });
 });

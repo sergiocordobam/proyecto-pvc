@@ -1,37 +1,59 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransferController } from '../src/operator/controllers/transfer.controler';
 import { TransferService } from '../src/operator/services/transfer.service';
-
+import { ConfirmTransferDto } from '../src/operator/DTO/ConfirmTransferDto';
+import { TransferRequestDto } from '../src/operator/DTO/TransferRequestDto';
+import { RegisterCitizenDto } from '../src/operator/DTO/RegisterCitizenDTO';
 describe('TransferController', () => {
-    let transferController: TransferController;
-    let transferService: TransferService;
+  let controller: TransferController;
+  let service: TransferService;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            controllers: [TransferController],
-            providers: [
-                {
-                    provide: TransferService,
-                    useValue: {
-                        processTransfer: jest.fn(),
-                        confirmTransfer: jest.fn(),
-                        registerCitizenAndDocuments: jest.fn(),
-                    },
-                },
-            ],
-        }).compile();
+  const mockTransferService = {
+    confirmTransfer: jest.fn(),
+    processTransfer: jest.fn(),
+    registerCitizenAndDocuments: jest.fn(),
+  };
 
-        transferController = module.get<TransferController>(TransferController);
-        transferService = module.get<TransferService>(TransferService);
-    });
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [TransferController],
+      providers: [
+        {
+          provide: TransferService,
+          useValue: mockTransferService,
+        },
+      ],
+    }).compile();
 
-    it('should process transfer', async () => {
-        const mockDto = { userId: '123', sourceOperator: 'op1', targetOperator: 'op2' };
-        jest.spyOn(transferService, 'processTransfer').mockResolvedValue(undefined); // Return void
+    controller = module.get<TransferController>(TransferController);
+    service = module.get<TransferService>(TransferService);
+  });
 
-        const result = await transferController.processTransfer(mockDto);
+  it('should call confirmTransfer on the service', async () => {
+    const dto = { operatorId: 'op-1', transferId: '123', status: 'confirmed' };
+    await controller.confirmCitizenTransfer(dto);
+    expect(service.confirmTransfer).toHaveBeenCalledWith(dto);
+  });
 
-        expect(transferService.processTransfer).toHaveBeenCalledWith(mockDto);
-        expect(result).toBeUndefined(); // Since the method returns void
-    });
+  it('should call processTransfer on the service', async () => {
+    const dto = { userId: '123', sourceOperator: 'op-1', targetOperator: 'op-2' };
+    await controller.processTransfer(dto);
+    expect(service.processTransfer).toHaveBeenCalledWith(dto);
+  });
+
+  it('should call registerCitizenAndDocuments and return success message', async () => {
+    const payload = {
+      id: '123',
+      citizenName: 'John Doe',
+      citizenEmail: 'john@example.com',
+      urlDocuments: {
+        national: ['doc1'],
+        extra: ['doc2'],
+      },
+    };
+
+    const result = await controller.registerCitizen(payload);
+    expect(service.registerCitizenAndDocuments).toHaveBeenCalledWith(payload);
+    expect(result).toEqual({ message: 'Citizen and documents registered successfully' });
+  });
 });

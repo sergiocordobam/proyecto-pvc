@@ -26,6 +26,11 @@ export class OperatorFetchService {
         return operators.find((op) => op.operatorName === name);
     }
 
+    async getSelfOperator(): Promise<any> {
+        const operators = await this.getOperators();
+        return operators.find((op) => op.operatorName ===  process.env.OPERATOR_NAME);
+    }
+
     async getOperatorById(id: string): Promise<any> {
         const operators = await this.getOperators();
         return operators.find((op) => op.id === id);

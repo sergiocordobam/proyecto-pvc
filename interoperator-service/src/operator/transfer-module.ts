@@ -7,7 +7,43 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
     imports: [
         ClientsModule.register([
             {
-                name: 'TRANSFER_CONFIRMATIONS',
+                name: 'DELETE_CITIZEN_CLIENT',
+                transport: Transport.RMQ,
+                options: {
+                    urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+                    queue: 'delete_citizen_queue',
+                    queueOptions: { durable: true },
+                },
+            },
+            {
+                name: 'DELETE_DOCUMENTS_CLIENT',
+                transport: Transport.RMQ,
+                options: {
+                    urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+                    queue: 'delete_documents_queue',
+                    queueOptions: { durable: true },
+                },
+            },
+            {
+                name: 'REGISTER_CITIZEN_CLIENT',
+                transport: Transport.RMQ,
+                options: {
+                    urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+                    queue: 'register_citizen_queue',
+                    queueOptions: { durable: true },
+                },
+            },
+            {
+                name: 'REGISTER_DOCUMENTS_CLIENT',
+                transport: Transport.RMQ,
+                options: {
+                    urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+                    queue: 'register_documents_queue',
+                    queueOptions: { durable: true },
+                },
+            },
+            {
+                name: 'TRANSFER_CONFIRMATIONS', // Already included
                 transport: Transport.RMQ,
                 options: {
                     urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import axios from 'axios';
 import { RegisterOperatorDto } from '../DTO/RegisterOperatorDto';
-//import { RegisterEndpointDto } from '../dtos/register-endpoint.dto';
+import { RegisterEndpointDto } from '../DTO/RegisterEndpointDto';
 
 @Injectable()
 export class OperatorRegistrationService {
@@ -16,10 +16,10 @@ export class OperatorRegistrationService {
         }
     }
 
-    async registerEndPoint(endpointData: any): Promise<void> {
+    async registerEndPoint(dto: RegisterEndpointDto): Promise<void> {
         try {
             console.log(`Registering endpointData`);
-            const response = await axios.post(`${this.apiUrl}/registerTransferEndPoint`, endpointData);
+            const response = await axios.post(`${this.apiUrl}/registerTransferEndPoint`, dto);
             console.log("Operator registered successfully");
             return response.data;
         } catch (error) {

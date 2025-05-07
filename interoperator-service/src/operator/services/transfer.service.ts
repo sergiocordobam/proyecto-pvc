@@ -103,177 +103,126 @@ export class TransferService {
     }
 }*/
 
-import { Injectable } from '@nestjs/common';
+import { Injectable,HttpException, HttpStatus,Inject } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { async, firstValueFrom } from 'rxjs';
+import { OperatorFetchService } from './operator-fetch.service';
+import axios from 'axios';
+import { log } from 'console';
+import { RegisterCitizenDto } from '../DTO/RegisterCitizenDTO';
 
 @Injectable()
 export class TransferService {
-    private readonly transferConfirmationsClient: ClientProxy;
-    private readonly fetchCitizenInfoClient: ClientProxy;
-    private readonly fetchDocumentUrlsClient: ClientProxy;
-    private readonly deleteCitizenClient: ClientProxy;
-    private readonly deleteDocumentsClient: ClientProxy;
-    private readonly registerCitizenClient: ClientProxy;
-    private readonly registerDocumentsClient: ClientProxy;
 
-    constructor() {
-        const rabbitMQUrl = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
-
-        this.transferConfirmationsClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'transfer_confirmations',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.fetchCitizenInfoClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'fetch_citizen_info',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.fetchDocumentUrlsClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'fetch_document_urls',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.deleteCitizenClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'delete_citizen',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.deleteDocumentsClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'delete_documents',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.registerCitizenClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'register_citizen',
-                queueOptions: { durable: true },
-            },
-        });
-
-        this.registerDocumentsClient = ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-                urls: [rabbitMQUrl],
-                queue: 'register_documents',
-                queueOptions: { durable: true },
-            },
-        });
-    }
-    @EventPattern('transfer_requests') // Listen to the 'transfer_requests' queue
+    constructor(
+        @Inject('DELETE_CITIZEN_CLIENT') private readonly deleteCitizenClient: ClientProxy,
+        @Inject('DELETE_DOCUMENTS_CLIENT') private readonly deleteDocumentsClient: ClientProxy,
+        @Inject('REGISTER_CITIZEN_CLIENT') private readonly registerCitizenClient: ClientProxy,
+        @Inject('REGISTER_DOCUMENTS_CLIENT') private readonly registerDocumentsClient: ClientProxy,
+        private readonly fetchService: OperatorFetchService,
+    ) {}
+     // Listen to the 'transfer_requests' queue
     async processTransfer(@Payload() message: any): Promise<void> {
         try {
             const { citizenId, operatorId } = message;
-
-            // Fetch citizen info via RabbitMQ
-            const citizenInfo = await firstValueFrom(
-                this.fetchCitizenInfoClient.send('fetch_citizen_info', { citizenId }),
-            );
+    
+            // Fetch citizen info via Kong Gateway
+            const citizenInfoResponse = await axios.get(`${process.env.AUTH_SERVICE_URL}/citizen-info/${citizenId}`);
+            const citizenInfo = citizenInfoResponse.data;
             console.log(`Fetched citizen info:`, citizenInfo);
-
-            // Fetch document URLs via RabbitMQ
-            const documentUrls = await firstValueFrom(
-                this.fetchDocumentUrlsClient.send('fetch_document_urls', { citizenId }),
-            );
+    
+            // Fetch document URLs via Kong Gateway
+            const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/${citizenId}/all`);
+            const documentUrls = documentUrlsResponse.data.files;
             console.log(`Fetched document URLs:`, documentUrls);
-
+    
             // Format the payload to match the required structure
             const payload = {
                 id: citizenId,
                 citizenName: citizenInfo.name,
                 citizenEmail: citizenInfo.email,
-                urlDocuments: documentUrls, // Dynamically include all document URLs
+                urlDocuments: documentUrls,
+                confirmAPI: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM, 
             };
+    
+            // Fetch the receiving operator's URL
+            const operatorUrl = await this.getOperatorUrl(operatorId);
+            console.log(`Fetched operator URL: ${operatorUrl}`);
+    
+            // Send the payload to the receiving operator's queue via RabbitMQ
 
-            // Simulate processing logic
-            console.log(`Processing transfer for citizen ${citizenId} to operator ${operatorId}`);
-            console.log(`Payload to be sent:`, payload);
-
-            // Publish confirmation to the transfer_confirmations queue
-            const confirmation = {
-                transferId: citizenId,
-                status: 'confirmed',
-            };
-            await firstValueFrom(this.transferConfirmationsClient.emit('transfer_confirmations', confirmation));
+            await axios.post(operatorUrl, payload);
+    
         } catch (error) {
             console.error(`Error processing transfer: ${error.message}`);
         }
+    }
+
+    private async getOperatorUrl(operatorId: string): Promise<string> {
+        const operator = await this.fetchService.getOperatorById(operatorId);
+
+        if (!operator || !operator.transferAPIURL) {
+            throw new HttpException(
+                `Interop URL not found for operator with ID: ${operatorId}`,
+                HttpStatus.NOT_FOUND,
+            );
+        }
+
+        return operator.transferAPIURL;
     }
 
     async confirmTransfer(dto: any): Promise<any> {
         try {
             const { operatorId, transferId, status } = dto;
 
-            // Simulate fetching the operator's URL (this logic can be replaced with actual implementation)
-            const operatorUrl = `http://example.com/operators/${operatorId}`;
-
-            // Send confirmation to the operator
+/*            // Send confirmation to the operator
             const response = await firstValueFrom(
                 this.transferConfirmationsClient.send('confirm_transfer', { operatorId, transferId, status }),
             );
 
             // If the confirmation is successful and the status is "confirmed"
-            if (response.status === 200 && status === 'confirmed') {
+            if (response.status === 200 && status === 'confirmed') {*/
                 // Delete citizen via RabbitMQ
-                await firstValueFrom(this.deleteCitizenClient.send('delete_citizen', { citizenId: transferId }));
+            // Delete citizen via RabbitMQ
+            this.deleteCitizenClient.emit('delete_citizen', {
+                citizenId: transferId,
+            });
 
-                // Delete documents via RabbitMQ
-                await firstValueFrom(this.deleteDocumentsClient.send('delete_documents', { citizenId: transferId }));
-            }
-
-            return response;
+            // Delete documents via RabbitMQ
+            this.deleteDocumentsClient.emit('delete_documents', {
+                citizenId: transferId,
+            });
         } catch (error) {
             console.error(`Error confirming transfer: ${error.message}`);
             throw new Error(`Error confirming transfer: ${error.message}`);
         }
     }
 
-    async registerCitizenAndDocuments(payload: any): Promise<void> {
+    async registerCitizenAndDocuments(payload: RegisterCitizenDto): Promise<void> {
         try {
-            const { id, citizenName, citizenEmail, urlDocuments } = payload;
+            const { id, citizenName, citizenEmail, urlDocuments,  } = payload;
 
             // Register the citizen in the Auth Service
-            const registerCitizenResponse = await firstValueFrom(
-                this.registerCitizenClient.send('register_citizen', {
-                    id: id,
-                    name: citizenName,
-                    email: citizenEmail,
-                }),
-            );
-            console.log(`Citizen registered successfully:`, registerCitizenResponse);
+            this.registerCitizenClient.emit('register_citizen', {
+                full_name: citizenName,
+                document_id: id,    
+                email: citizenEmail,
+                password: id,       
+                terms_accepted: true
+            });                  
+
+            console.log(`Citizen registered successfully`);
+
+            const flatUrls = Object.values(urlDocuments).flat();
 
             // Send document URLs to the Document Service
-            const registerDocumentsResponse = await firstValueFrom(
-                this.registerDocumentsClient.send('register_documents', {
-                    citizenId: id,
-                    documents: urlDocuments,
-                }),
-            );
-            console.log(`Documents registered successfully:`, registerDocumentsResponse);
+            this.registerDocumentsClient.emit('register_documents', {
+                citizenId: id,
+                documents: flatUrls,
+            });
+            console.log(`Documents registered successfully`);
+            
         } catch (error) {
             console.error(`Error registering citizen and documents: ${error.message}`);
             throw new Error(`Error registering citizen and documents: ${error.message}`);
