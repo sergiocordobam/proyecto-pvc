@@ -1,4 +1,4 @@
-SERVICE_ACCOUNT_KEY_RELATIVE_PATH := "internal/infrastructure/gcp/service-account-key.json"
+SERVICE_ACCOUNT_KEY_RELATIVE_PATH := "internal/infrastructure/apis/gcp/service-account-key.json"
 
 set-environment:
 	@echo "Setting GOOGLE_APPLICATION_CREDENTIALS dynamically..."

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"document-service/cmd/documents-api/routes"
-	"document-service/internal/infrastructure/gcp"
+	"document-service/internal/infrastructure/apis/gcp"
 	"encoding/json"
 	"log"
 	"net/http"

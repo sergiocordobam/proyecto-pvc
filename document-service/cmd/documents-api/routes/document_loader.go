@@ -2,7 +2,7 @@ package routes
 
 import (
 	"document-service/cmd/documents-api/handlers"
-	"document-service/internal/infrastructure/gcp"
+	"document-service/internal/infrastructure/apis/gcp"
 	"document-service/internal/repository"
 	"document-service/internal/services"
 	"fmt"
@@ -27,6 +27,7 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
 	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())
 	d.router.Get("/files/{user_id}", handler.HandleDocumentsListByUser())
+	d.router.Get("/files/download/{user_id}/all", handler.HandleReturnAllDownloadURL())
 	d.ListRoutes()
 
 }
@@ -34,10 +35,9 @@ func (d *DocumentLoaderRoutes) UseMiddlewares() {
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"}, // Encabezados permitidos
-		ExposedHeaders:   []string{"*"},                                                       // Encabezados que el frontend puede leer
-		AllowCredentials: true,                                                                // Permite cookies, encabezados de autorización, etc.
-		MaxAge:           3600,                                                                // Tiempo que el navegador puede cachear la respuesta de preflight
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"*"},
+		AllowCredentials: true,
 	})
 
 	d.router.Use(middleware.Logger)

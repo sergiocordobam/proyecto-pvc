@@ -5,6 +5,7 @@ import (
 	"document-service/internal/models"
 	"document-service/internal/repository"
 	"document-service/internal/validator"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -141,4 +142,43 @@ func (d *DocumentLoadService) callDocumentsURLDownload(userID int, fileNames []s
 
 	wg.Wait()
 	return signedURLInfoList
+}
+
+func (d *DocumentLoadService) DownloadAllFilesFromUser(ctx context.Context, userID int) (models.DownloadAllResponse, error) {
+	if err := d.validator.ValidateUserID(userID); err != nil {
+		return models.DownloadAllResponse{
+			StatusCode: http.StatusBadRequest,
+		}, err
+	}
+	allDocs, err := d.GetUserDocuments(ctx, userID)
+	if err != nil {
+		return models.DownloadAllResponse{
+			StatusCode: http.StatusFailedDependency,
+		}, errors.New("DownloadAllFilesFromUser: error getting user documents")
+	}
+	if len(allDocs) == 0 {
+		return models.DownloadAllResponse{
+			StatusCode: http.StatusNotFound,
+		}, errors.New("DownloadAllFilesFromUser: user has no documents")
+	}
+	allFileNames := make([]string, len(allDocs))
+	for i, doc := range allDocs {
+		allFileNames[i] = doc.Metadata.Name
+	}
+	signedURLs := d.callDocumentsURLDownload(userID, allFileNames)
+	if len(signedURLs) == 0 {
+		return models.DownloadAllResponse{
+			StatusCode: http.StatusNotFound,
+		}, nil
+	}
+	onlyURLs := make([]string, len(signedURLs))
+	for i, signedURL := range signedURLs {
+		onlyURLs[i] = signedURL.SignedUrl
+	}
+	response := models.DownloadAllResponse{
+		StatusCode: http.StatusOK,
+		Files:      onlyURLs,
+		UserID:     userID,
+	}
+	return response, nil
 }

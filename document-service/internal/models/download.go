@@ -11,3 +11,8 @@ type DownloadResponse struct {
 type Files struct {
 	FileName []string `json:"file_names"`
 }
+type DownloadAllResponse struct {
+	StatusCode int      `json:"status"`
+	UserID     int      `json:"user_id"`
+	Files      []string `json:"files"`
+}
