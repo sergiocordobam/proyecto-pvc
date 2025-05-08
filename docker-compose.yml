@@ -31,6 +31,10 @@ services:
     depends_on:
       - rabbitmq
       - interoperator-service
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_HOST=rabbitmq
     networks:
       - app-network
 
@@ -45,7 +49,15 @@ services:
       dockerfile: Dockerfile
     environment:
       - NODE_ENV=test
-      - API_BASE_URL=http://mock-api:3000
+      - OPERATOR_NAME=7894566124
+      - OPERATOR_ADDRESS=Calle 7 N° 25  - 153, Medellín, Antioquia
+      - OPERATOR_CONTACT_EMAIL=svp@gmail.com
+      - OPERATOR_PARTICIPANTS1=Viviana Hoyos Sierra
+      - OPERATOR_PARTICIPANTS2=Sergio A. Cordoba Muriel
+      - OPERATOR_PARTICIPANTS3=Pablo Micolta Lopez
+      - OPERATOR_TRANSFER_ENDPOINT=http://localhost:8000/comunication/transfers/process-transfer
+      - OPERATOR_TRANSFER_ENDPOINT_CONFIRM=http://localhost:8000/comunication/transfers/confirm-citizen-transfer
+      - API_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis
       - AUTH_SERVICE_URL=http://auth-service:4000
       - DOCUMENT_SERVICE_URL=http://document-service:5000
       - RABBITMQ_URL=amqp://rabbitmq:5672   # Update to the internal RabbitMQ service URL
@@ -77,7 +89,7 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
       test: ["CMD", "rabbitmqctl", "status"]
-      interval: 30s
+      interval: 60s
       retries: 5
       start_period: 10s
       timeout: 20s
