@@ -1,24 +1,23 @@
 package handlers
 
 import (
-	"document-service/cmd/documents-api/validator"
 	"document-service/cmd/pkg"
 	"document-service/internal/models"
-	"document-service/internal/repository"
+	"document-service/internal/services"
 	"encoding/json"
 	"net/http"
-	"time"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type DocumentLoaderHandler struct {
-	ObjectStorageRepository repository.ObjectStorageRepositoryInterface
-	reqValidator            validator.ReqValidatorInterface
+	Service services.DocumentServiceInterface
 }
 
-func NewDocumentLoaderHandler(objectStorageRepository repository.ObjectStorageRepositoryInterface) *DocumentLoaderHandler {
+func NewDocumentLoaderHandler(service services.DocumentServiceInterface) *DocumentLoaderHandler {
 	return &DocumentLoaderHandler{
-		ObjectStorageRepository: objectStorageRepository,
-		reqValidator:            validator.NewReqValidator(),
+		Service: service,
 	}
 }
 func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.HandlerFunc {
@@ -32,51 +31,115 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
 			return
 		}
-
-		errValidating := h.reqValidator.ValidateUserID(uploadRequest.UserID)
-		if errValidating != nil {
-			pkg.Error(w, http.StatusBadRequest, "Invalid user ID")
-			return
-		}
-
-		documents := generateDocumentStructs(uploadRequest.UserID, uploadRequest.Files)
-		err := h.ObjectStorageRepository.CreateUserDirectory(r.Context(), uploadRequest.UserID)
+		uploadResponse, err := h.Service.UploadFiles(r.Context(), uploadRequest)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Failed to create user directory: %v", err)
+			pkg.Error(w, uploadResponse.StatusCode, "Error in HandleDocumentUploadSignedURLRequest: %s", err.Error())
 			return
 		}
 
-		var signedURLs []models.SignedUrlInfo
-		for i, document := range documents {
-			url, errObj := h.ObjectStorageRepository.GenerateUploadSignedURL(document)
-			if errObj != nil {
-				pkg.Error(w, http.StatusInternalServerError, "Failed to generate signed URL")
-				return
-			}
-			documents[i].URL = url
-			signedURLs = append(signedURLs, models.SignedUrlInfo{
-				FileName:    document.Metadata.Name,
-				SignedUrl:   url,
-				ExpiresAt:   time.Now().Add(15 * time.Minute), // Set appropriate expiration
-				ContentType: document.Metadata.ContentType,
-			})
-		}
-
-		response := models.UploadResponse{
-			StatusCode:   http.StatusOK,
-			DocumentsURL: signedURLs,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
 	}
 }
+func (h *DocumentLoaderHandler) HandleDocumentDownloadSignedURLRequest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		var fileData models.Files
+		if err := json.NewDecoder(r.Body).Decode(&fileData); err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+		}
+		userID := chi.URLParam(r, "user_id")
 
-func generateDocumentStructs(userID int, fileUploadInfo []models.FileUploadInfo) []models.Document {
-	documentsList := make([]models.Document, len(fileUploadInfo))
-	for i, file := range fileUploadInfo {
-		documentsList[i] = models.NewDocument(file.FileName, file.DocumentType, file.ContentType, file.Size, userID)
+		userIDInt, err := strconv.Atoi(userID)
+		downloadRequest := models.DownloadRequest{
+			UserID:   userIDInt,
+			FileName: fileData.FileName,
+		}
+		uploadResponse, err := h.Service.DownloadFiles(r.Context(), downloadRequest)
+		if err != nil {
+			pkg.Error(w, uploadResponse.StatusCode, "Error HandleDocumentDownloadSignedURLRequest: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
 	}
-	return documentsList
+}
+func (h *DocumentLoaderHandler) HandleDocumentsListByUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, err := strconv.Atoi(userID)
+		if err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", err.Error())
+			return
+		}
+		documents, err := h.Service.GetUserDocuments(r.Context(), userIDInt)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleGetAllUserDocumentsData: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, documents)
+	}
+}
+func (h *DocumentLoaderHandler) HandleReturnAllDownloadURL() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, err := strconv.Atoi(userID)
+		if err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", err.Error())
+			return
+		}
+		document, err := h.Service.DownloadAllFilesFromUser(r.Context(), userIDInt)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleGetDocumentData: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, document)
+	}
+}
+func (h *DocumentLoaderHandler) HandleDeleteSelectedFiles() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		var deleteReq models.DeleteRequest
+		if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+			return
+		}
+		err := h.Service.DeleteSelectedFilesInUserDirectory(r.Context(), deleteReq.UserID, deleteReq.FileNames)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, "ok")
+	}
+}
+func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, errParam := strconv.Atoi(userID)
+		if errParam != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", errParam.Error())
+			return
+		}
+		err := h.Service.DeleteAllFilesInUserDirectory(r.Context(), userIDInt)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			return
+		}
+		pkg.Success(w, http.StatusOK, "file deleted successfully")
+	}
 }

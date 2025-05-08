@@ -1,6 +1,6 @@
 .venv/
-serviceAccountKey.json
-__pycache__/
-.service-account-key.json
+**/service-account-key.json
 .DS_Store
-service-account-key.json
+.idea
+__pycache__
+serviceAccountKey.json

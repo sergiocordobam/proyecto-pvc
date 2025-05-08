@@ -121,7 +121,7 @@ uploadForm.addEventListener('submit', async function(event) {
     };
 
     // 2. Llamar a tu API backend para obtener las URLs firmadas
-    const backendApiUrl = 'http://localhost:8080/files/upload'; // <-- ¡REEMPLAZA con la URL REAL de tu endpoint API!
+    const backendApiUrl = 'http://localhost:8001/files/upload'; // <-- ¡REEMPLAZA con la URL REAL de tu endpoint API!
     // const backendApiUrl = 'http://localhost:8080/files/request-upload-urls'; // Ejemplo local
 
     try {
