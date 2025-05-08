@@ -1,42 +1,52 @@
 import pika
 import json
 import os
-import threading
+import time
 
 def handle_register_citizen(data):
     print("Handling register citizen:", data)
-    # TODO: Add logic to insert user into DB or perform other actions
-
-# def handle_delete_documents(data):
-#     print("Handling delete documents:", data)
-#     # TODO: Add logic to delete documents from DB
 
 def start_rabbitmq_consumer():
     def callback_register(ch, method, properties, body):
         data = json.loads(body)
         handle_register_citizen(data)
 
-    # def callback_delete(ch, method, properties, body):
-    #     data = json.loads(body)
-    #     handle_delete_documents(data)
-
-    rabbitmq_user = os.getenv('RABBITMQ_USER', 'guest')
-    rabbitmq_password = os.getenv('RABBITMQ_PASSWORD', 'guest')
-    rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
+    rabbitmq_user = os.getenv('RABBITMQ_DEFAULT_USER', 'guest')
+    rabbitmq_password = os.getenv('RABBITMQ_DEFAULT_PASS', 'guest')
+    rabbitmq_host = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 
     credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_password)
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host, credentials=credentials))
-    channel = connection.channel()
 
-    channel.queue_declare(queue='register_citizen_queue', durable=True)
-    # channel.queue_declare(queue='delete_documents_queue', durable=True)
+    retries = 5
+    for _ in range(retries):
+        try:
+            print("Waiting 15s to ensure RabbitMQ is ready...")
+            time.sleep(15)
 
-    channel.basic_consume(queue='register_citizen_queue', on_message_callback=callback_register, auto_ack=True)
-    # channel.basic_consume(queue='delete_documents_queue', on_message_callback=callback_delete, auto_ack=True)
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_host}...")
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_password}...")
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_user}...")
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq", credentials=credentials, heartbeat=600, blocked_connection_timeout=300))
+            print("conn")
+            channel = connection.channel()
+            print("channel")
 
-    print(" [*] Waiting for messages. To exit press CTRL+C")
-    channel.start_consuming()
+            channel.queue_declare(queue='register_citizen_queue', durable=True)
+            print("queue declare")
 
-def run_consumer_in_background():
-    thread = threading.Thread(target=start_rabbitmq_consumer, daemon=True)
-    thread.start()
+            channel.basic_qos(prefetch_count=1)
+            print("prefetch")
+
+            channel.basic_consume(queue='register_citizen_queue', on_message_callback=callback_register, auto_ack=True)
+            print("channel consume")
+
+            print(" [*] Waiting for messages. To exit press CTRL+C")
+            channel.start_consuming()
+
+            break
+        except Exception as e:
+            print(f"Connection failed: {e.__class__.__name__} - {e}. Retrying...")
+            time.sleep(5)
+
+    else:
+        print("Failed to connect to RabbitMQ after several attempts. Exiting.")
