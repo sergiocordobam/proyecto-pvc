@@ -28,13 +28,15 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())
 	d.router.Get("/files/{user_id}", handler.HandleDocumentsListByUser())
 	d.router.Get("/files/download/{user_id}/all", handler.HandleReturnAllDownloadURL())
+	d.router.Delete("/files/", handler.HandleDeleteSelectedFiles())
+	d.router.Delete("/files/{user_id}/all", handler.HandleDeleteAllFiles())
 	d.ListRoutes()
 
 }
 func (d *DocumentLoaderRoutes) UseMiddlewares() {
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST"},
+		AllowedMethods:   []string{"GET", "POST", "DELETE"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"*"},
 		AllowCredentials: true,

@@ -61,8 +61,12 @@ func (s *StorageClient) ObjectExists(ctx context.Context, userID int, path strin
 }
 
 func (s *StorageClient) DeleteObject(ctx context.Context, path string) error {
-	//TODO implement me
-	panic("implement me")
+	obj := s.Client.Bucket(s.BucketName).Object(path)
+	err := obj.Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *StorageClient) SetObjectAttributes(ctx context.Context, objectHandler *storage.ObjectHandle, attrs storage.ObjectAttrsToUpdate) error {

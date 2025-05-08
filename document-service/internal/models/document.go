@@ -2,7 +2,14 @@ package models
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
+)
+
+const (
+	TemporalStatus = "temporal"
+	VerfiiedStatus = "verified"
 )
 
 type Document struct {
@@ -17,6 +24,22 @@ type Metadata struct {
 	Type         string    `json:"type"`
 	CreationDate time.Time `json:"creation_date"`
 	ContentType  string    `json:"content_type"`
+	Status       string    `json:"status,omitempty"`
+}
+
+func NewMetadata(name, documentType, contentType string, size, ownerId int) Metadata {
+	currentDate := time.Now()
+	newName := strings.Replace(name, strconv.Itoa(ownerId)+"/", "", -1)
+	return Metadata{
+		Name:         newName,
+		Size:         size,
+		OwnerID:      ownerId,
+		Type:         documentType,
+		CreationDate: currentDate,
+		ContentType:  contentType,
+		AbsPath:      fmt.Sprintf("%d/%s", ownerId, name),
+		Status:       TemporalStatus,
+	}
 }
 
 func NewDocument(name, documentType, contentType string, size, ownerId int) Document {
@@ -31,6 +54,7 @@ func NewDocument(name, documentType, contentType string, size, ownerId int) Docu
 			CreationDate: currentDate,
 			ContentType:  contentType,
 			AbsPath:      fmt.Sprintf("%d/%s", ownerId, name),
+			Status:       TemporalStatus,
 		},
 	}
 }
