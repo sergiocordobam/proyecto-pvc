@@ -10,6 +10,6 @@ type DocumentServiceInterface interface {
 	DownloadFiles(ctx context.Context, downloadRequest models.DownloadRequest) (models.DownloadResponse, error)
 	DownloadAllFilesFromUser(ctx context.Context, userID int) (models.DownloadAllResponse, error)
 	GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error)
-	DeleteSelectedFilesInUserDirectory(ctx context.Context, userID int, files []string) error
+	DeleteSelectedFileInUserDirectory(ctx context.Context, userID int, files string) error
 	DeleteAllFilesInUserDirectory(ctx context.Context, userID int) error
 }
