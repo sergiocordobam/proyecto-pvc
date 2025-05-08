@@ -48,7 +48,7 @@ export class CitizenService {
         }
     }
 
-    @EventPattern('delete_citizen')
+    //@EventPattern('delete_citizen')
     async deleteCitizen(@Payload() data: { document_id: string }): Promise<void> {
         const { document_id } = data;
     

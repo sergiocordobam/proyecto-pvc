@@ -36,7 +36,7 @@ import axios from 'axios';
 export class DocumentService {
     private readonly documentServiceUrl = process.env.DOCUMENT_SERVICE_URL || 'http://localhost:5000';
 
-    @EventPattern('fetch_document_urls')
+    //@EventPattern('fetch_document_urls')
     async fetchDocumentUrls(@Payload() data: { citizenId: string }): Promise<any> {
         try {
             console.log(`Fetching document URLs for citizen ID: ${data.citizenId}`);
@@ -48,7 +48,7 @@ export class DocumentService {
         }
     }
 
-    @EventPattern('delete_documents')
+    //@EventPattern('delete_documents')
     async deleteDocuments(@Payload() data: { citizenId: string }): Promise<void> {
         try {
             console.log(`Deleting documents for citizen ID: ${data.citizenId}`);

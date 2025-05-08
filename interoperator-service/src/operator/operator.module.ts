@@ -37,6 +37,10 @@ import { TokenService } from './services/token.service';
         OperatorFetchService,
         OperatorRegistrationService,
         TokenService,
+        {
+            provide: 'API_URL',
+            useValue: process.env.API_URL, // or whatever default
+        }
     ],
 })
 export class OperatorModule {}
