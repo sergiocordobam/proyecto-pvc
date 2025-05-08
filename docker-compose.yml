@@ -18,26 +18,76 @@ services:
       - ./kong/kong.yml:/kong/kong.yml
     depends_on:
       - auth-service
-      - document-service
-      - notification-service
+      # - document-service
+      # - notification-service
       - interoperator-service
+    networks:
+      - app-network
 
   auth-service:
     build: ./auth-service
     ports:
       - "6000:5000"
+    depends_on:
+      - rabbitmq
+      - interoperator-service
+    networks:
+      - app-network
 
-  document-service:
-    build: ./document-service
-    ports:
-      - "9080:8080"
-
-  notification-service:
-    build: ./notification-service
-    ports:
-      - "5567:5001"
+  # document-service:
+  #   build: ./document-service
+  #   ports:
+  #     - "9080:8080"
 
   interoperator-service:
-    build: ./interoperator-service
+    build:
+      context: ./interoperator-service
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=test
+      - API_BASE_URL=http://mock-api:3000
+      - AUTH_SERVICE_URL=http://auth-service:4000
+      - DOCUMENT_SERVICE_URL=http://document-service:5000
+      - RABBITMQ_URL=amqp://rabbitmq:5672   # Update to the internal RabbitMQ service URL
+    depends_on:
+      - rabbitmq
+    command: ["npm", "start"]
     ports:
-      - "4000:5002"
+      - "5002:3000"   # Expose service on port 5002
+    networks:
+      - app-network
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management  # RabbitMQ with management UI
+  #   ports:
+  #     - "5672:5672"    # AMQP port
+  #     - "15672:15672"  # HTTP management console
+  #   networks:
+  #     - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # HTTP management console
+    networks:
+      - app-network
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      retries: 5
+      start_period: 10s
+      timeout: 20s
+
+
+networks:
+  app-network:
+    driver: bridge
+
+  # notification-service:
+  #   build: ./notification-service
+  #   ports:
+  #     - "5567:5001"

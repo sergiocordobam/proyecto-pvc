@@ -15,12 +15,17 @@ type UploadRequest struct {
 	Files  []FileUploadInfo `json:"files"`
 }
 type SignedUrlInfo struct {
-	FileName    string    `json:"fileName"`
-	SignedUrl   string    `json:"signedUrl"`
-	ExpiresAt   time.Time `json:"expiresAt"`
-	ContentType string    `json:"contentType"`
+	FileName       string         `json:"fileName"`
+	SignedUrl      string         `json:"signedUrl"`
+	ExpiresAt      time.Time      `json:"expiresAt"`
+	ContentType    string         `json:"contentType"`
+	CustomMetadata CustomMetadata `json:"customMetadata"`
 }
 type UploadResponse struct {
 	StatusCode   int             `json:"status"`
 	DocumentsURL []SignedUrlInfo `json:"documents"`
+}
+type CustomMetadata struct {
+	Status       string `json:"x-goog-meta-status"`
+	DocumentType string `json:"x-goog-meta-document-type"`
 }
