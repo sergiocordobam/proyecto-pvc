@@ -88,3 +88,7 @@ func (o *ObjectStorageRepository) CreateUserDirectory(ctx context.Context, userI
 	}
 	return nil
 }
+
+func (o *ObjectStorageRepository) DeleteFile(ctx context.Context, fileName string) error {
+	return o.gcpclient.DeleteObject(ctx, fileName)
+}
