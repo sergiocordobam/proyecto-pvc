@@ -47,15 +47,9 @@ func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID i
 		return userDocumentsList, err
 	}
 	for _, obj := range objListAttributes {
+		metadata := models.NewMetadata(obj.Name, "", obj.ContentType, int(obj.Size), userID)
 		userDocumentsList = append(userDocumentsList, models.Document{
-			Metadata: models.Metadata{
-				Name:         obj.Name,
-				OwnerID:      userID,
-				ContentType:  obj.ContentType,
-				Size:         int(obj.Size),
-				CreationDate: obj.Created,
-				AbsPath:      obj.Name,
-			},
+			Metadata: metadata,
 		})
 	}
 	return userDocumentsList, nil
@@ -87,4 +81,8 @@ func (o *ObjectStorageRepository) CreateUserDirectory(ctx context.Context, userI
 		return err
 	}
 	return nil
+}
+
+func (o *ObjectStorageRepository) DeleteFile(ctx context.Context, fileName string) error {
+	return o.gcpclient.DeleteObject(ctx, fileName)
 }

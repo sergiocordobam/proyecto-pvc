@@ -67,11 +67,6 @@ func (d *DocumentLoadService) DownloadFiles(ctx context.Context, downloadRequest
 
 }
 
-func (d DocumentLoadService) GetDocumentData(userID int, documentName string) (models.Document, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (d *DocumentLoadService) GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error) {
 	if err := d.validator.ValidateUserID(userID); err != nil {
 		return []models.Document{}, err
@@ -101,7 +96,10 @@ func (d *DocumentLoadService) callDocumentsURL(userID int, fileUploadInfo []mode
 			signedURLInfo.SignedUrl = url
 			signedURLInfo.ExpiresAt = expirationTime
 			signedURLInfo.ContentType = document.Metadata.ContentType
-			m.Lock()
+			signedURLInfo.CustomMetadata = models.CustomMetadata{
+				Status:       document.Metadata.Status,
+				DocumentType: document.Metadata.Type,
+			}
 			signedURLInfoList[i] = signedURLInfo
 			m.Unlock()
 
@@ -181,4 +179,43 @@ func (d *DocumentLoadService) DownloadAllFilesFromUser(ctx context.Context, user
 		UserID:     userID,
 	}
 	return response, nil
+}
+
+func (d *DocumentLoadService) DeleteSelectedFilesInUserDirectory(ctx context.Context, userID int, files []string) error {
+	if err := d.validator.ValidateUserID(userID); err != nil {
+		return err
+	}
+	if len(files) == 0 {
+		return errors.New("DeleteSelectedFilesInUserDirectory: no files to delete")
+	}
+
+	for _, file := range files {
+		document := models.NewDocument(file, EmptyStr, EmptyStr, 0, userID)
+		err := d.repository.DeleteFile(ctx, document.Metadata.AbsPath)
+		if err != nil {
+			return errors.New("DeleteSelectedFilesInUserDirectory: error deleting file")
+		}
+	}
+	return nil
+}
+func (d *DocumentLoadService) DeleteAllFilesInUserDirectory(ctx context.Context, userID int) error {
+	if err := d.validator.ValidateUserID(userID); err != nil {
+		return err
+	}
+	allDocs, err := d.GetUserDocuments(ctx, userID)
+	if err != nil {
+		return errors.New("DeleteAllFilesInUserDirectory: error getting user documents")
+	}
+	if len(allDocs) == 0 {
+		return errors.New("DeleteAllFilesInUserDirectory: user has no documents")
+	}
+	allFileNames := make([]string, len(allDocs))
+	for i, doc := range allDocs {
+		allFileNames[i] = doc.Metadata.Name
+	}
+	err = d.DeleteSelectedFilesInUserDirectory(ctx, userID, allFileNames)
+	if err != nil {
+		return errors.New("DeleteAllFilesInUserDirectory: error deleting files")
+	}
+	return nil
 }

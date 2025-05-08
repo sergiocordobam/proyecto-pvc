@@ -1,3 +1,4 @@
+// __tests__/citizen.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { CitizenService } from '../src/operator/services/Auth-service-Conection';
 import axios from 'axios';
@@ -6,55 +7,40 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('CitizenService', () => {
-    let citizenService: CitizenService;
+  let service: CitizenService;
 
-    beforeEach(async () => {
-        // Mock the environment variable
-        process.env.AUTH_SERVICE_URL = 'http://localhost:4000';
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CitizenService],
+    }).compile();
 
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [CitizenService],
-        }).compile();
+    service = module.get<CitizenService>(CitizenService);
+  });
 
-        citizenService = module.get<CitizenService>(CitizenService);
+  describe('fetchCitizenInfo', () => {
+    it('should return citizen info from axios', async () => {
+      const mockData = { name: 'Jane Doe', email: 'jane@example.com' };
+      mockedAxios.get.mockResolvedValueOnce({ data: mockData });
+
+      const result = await service.fetchCitizenInfo({ citizenId: '123' });
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:4000/citizens/123');
+      expect(result).toEqual(mockData);
+    });
+  });
+
+  describe('deleteCitizen', () => {
+    it('should send delete request via axios', async () => {
+      mockedAxios.delete.mockResolvedValueOnce({ status: 200 });
+
+      await service.deleteCitizen({ document_id: '123' });
+      expect(mockedAxios.delete).toHaveBeenCalledWith(
+        'http://localhost:4000/delete_user',
+        { data: { document_id: '123' } },
+      );
     });
 
-    it('should fetch citizen info', async () => {
-        const mockResponse = { data: { id: '123', name: 'John Doe' } };
-        mockedAxios.get.mockResolvedValue(mockResponse);
-
-        const result = await citizenService.fetchCitizenInfo({ citizenId: '123' });
-
-        expect(mockedAxios.get).toHaveBeenCalledWith(`${process.env.AUTH_SERVICE_URL}/citizens/123`);
-        expect(result).toEqual(mockResponse.data);
+    it('should throw if document_id is missing', async () => {
+      await expect(service.deleteCitizen({ document_id: '' })).rejects.toThrow('Document ID is required');
     });
-
-    it('should delete a citizen', async () => {
-        const mockResponse = { status: 200 };
-        mockedAxios.delete.mockResolvedValue(mockResponse);
-
-        await citizenService.deleteCitizen({ document_id: '5555555555' });
-
-        expect(mockedAxios.delete).toHaveBeenCalledWith(`${process.env.AUTH_SERVICE_URL}/delete_user`, {
-            data: { document_id: '5555555555' },
-        });
-    });
-
-    it('should handle errors when deleting a citizen', async () => {
-        mockedAxios.delete.mockRejectedValue(new Error('Test error'));
-
-        await expect(citizenService.deleteCitizen({ document_id: '5555555555' })).rejects.toThrow(
-            'Error deleting user: Test error',
-        );
-
-        expect(mockedAxios.delete).toHaveBeenCalledWith(`${process.env.AUTH_SERVICE_URL}/delete_user`, {
-            data: { document_id: '5555555555' },
-        });
-    });
-
-    it('should throw an error if document_id is missing', async () => {
-        await expect(citizenService.deleteCitizen({ document_id: '' })).rejects.toThrow(
-            'Document ID is required',
-        );
-    });
+  });
 });

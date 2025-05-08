@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { OperatorFetchService } from '../services/operator-fetch.service';
 import { OperatorRegistrationService } from '../services/operator-registration.service';
 import { TokenService } from '../services/token.service';
+import { RegisterEndpointDto } from '../DTO/RegisterEndpointDto';
 
 @Controller('operators')
 export class OperatorController {
@@ -24,14 +25,27 @@ export class OperatorController {
             res.status(500).json({ error: 'Failed to fetch operators' });
         }
     }
+    @Get('self')
+    async fetchSelfOperator(@Req() req: Request, @Res() res: Response): Promise<void> {
+        try {
+            const operator = await this.fetchService.getSelfOperator();
+            res.status(200).json(operator);
+        } catch (error) {
+            console.error('Error fetching self operator:', error.message);
+            res.status(500).json({ error: 'Failed to fetch self operator' });
+        }
+    }
 
     async initialize(): Promise<void> {
         try {
             const operatorName = process.env.OPERATOR_NAME!;
             const operator = await this.fetchService.getOperatorByName(operatorName);
-
             if (operator) {
                 console.log(`Operator ${operatorName} already exists.`);
+                const registeredOperator = await this.fetchService.getSelfOperator();
+                console.log(`token: ${registeredOperator._id}`);
+                this.tokenService.saveToken(registeredOperator._id);
+                console.log(`token saved: ${process.env.OPERATOR_ID}`)
             } else {
                 console.log(`Operator ${operatorName} does not exist. Registering...`);
                 const operatorData = {
@@ -48,10 +62,11 @@ export class OperatorController {
                 this.tokenService.saveToken(registeredOperator);
                 const endpointData = {
                     idOperator: registeredOperator,
-                    endPoint: process.env.OPERATOR_TRANSFER_ENDPOINT!,
+                    endPoint: process.env.OPERATOR_TRANSFER_ENDPOINT,
                     endPointConfirm: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM,
-                };
+                } as RegisterEndpointDto;
                 this.registrationService.registerEndPoint(endpointData);
+                console.log(`token: ${registeredOperator}`);
             }
             console.log(`Operator ${operatorName} registered successfully.`);
         } catch (error) {

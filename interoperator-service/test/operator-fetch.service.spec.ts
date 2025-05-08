@@ -1,4 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { OperatorFetchService } from '../src/operator/services/operator-fetch.service';
 import axios from 'axios';
 
@@ -6,44 +5,72 @@ jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('OperatorFetchService', () => {
-    let fetchService: OperatorFetchService;
+  let service: OperatorFetchService;
 
-    beforeEach(async () => {
-        // Mock the environment variable
-        process.env.API_BASE_URL = 'http://localhost:3000';
+  beforeEach(() => {
+    service = new OperatorFetchService();
+    jest.clearAllMocks();
+  });
 
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [OperatorFetchService],
-        }).compile();
+  describe('getOperators', () => {
+    it('should return list of operators on success', async () => {
+      const mockOperators = [{ id: '1', operatorName: 'Alpha' }];
+      mockedAxios.get.mockResolvedValueOnce({ data: mockOperators });
 
-        fetchService = module.get<OperatorFetchService>(OperatorFetchService);
+      const result = await service.getOperators();
+
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3000/getOperators');
+      expect(result).toEqual(mockOperators);
     });
 
-    it('should fetch all operators', async () => {
-        const mockOperators = [{ id: '1', name: 'Operator1' }];
-        mockedAxios.get.mockResolvedValue({ data: mockOperators });
+    it('should throw error if axios call fails', async () => {
+      mockedAxios.get.mockRejectedValueOnce(new Error('Fetch failed'));
 
-        const result = await fetchService.getOperators();
+      await expect(service.getOperators()).rejects.toThrow('Fetch failed');
+    });
+  });
 
-        expect(mockedAxios.get).toHaveBeenCalledWith(`${process.env.API_BASE_URL}/getOperators`);
-        expect(result).toEqual(mockOperators);
+  describe('getOperatorByName', () => {
+    it('should return operator matching the name', async () => {
+      const mockOperators = [
+        { id: '1', operatorName: 'Alpha' },
+        { id: '2', operatorName: 'Beta' },
+      ];
+      mockedAxios.get.mockResolvedValueOnce({ data: mockOperators });
+
+      const result = await service.getOperatorByName('Beta');
+
+      expect(result).toEqual({ id: '2', operatorName: 'Beta' });
     });
 
-    it('should fetch operator by name', async () => {
-        const mockOperators = [{ id: '1', operatorName: 'Operator1' }];
-        jest.spyOn(fetchService, 'getOperators').mockResolvedValue(mockOperators);
+    it('should return undefined if no operator matches the name', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: [] });
 
-        const result = await fetchService.getOperatorByName('Operator1');
+      const result = await service.getOperatorByName('Nonexistent');
 
-        expect(result).toEqual(mockOperators[0]);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getOperatorById', () => {
+    it('should return operator matching the id', async () => {
+      const mockOperators = [
+        { id: '1', operatorName: 'Alpha' },
+        { id: '2', operatorName: 'Beta' },
+      ];
+      mockedAxios.get.mockResolvedValueOnce({ data: mockOperators });
+
+      const result = await service.getOperatorById('1');
+
+      expect(result).toEqual({ id: '1', operatorName: 'Alpha' });
     });
 
-    it('should fetch operator by ID', async () => {
-        const mockOperators = [{ id: '1', operatorName: 'Operator1' }];
-        jest.spyOn(fetchService, 'getOperators').mockResolvedValue(mockOperators);
+    it('should return undefined if no operator matches the id', async () => {
+      mockedAxios.get.mockResolvedValueOnce({ data: [] });
 
-        const result = await fetchService.getOperatorById('1');
+      const result = await service.getOperatorById('999');
 
-        expect(result).toEqual(mockOperators[0]);
+      expect(result).toBeUndefined();
     });
+  });
 });
