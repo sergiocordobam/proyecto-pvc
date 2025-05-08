@@ -4,9 +4,12 @@ from user_register.register import UserRegister
 from user_delete.delete import UserDelete
 from user_login.login import UserLogin
 from user_exists.exists import UserExists
+from rabbitmq.consumer import run_consumer_in_background
 
 app = Flask(__name__)
 CORS(app)
+
+run_consumer_in_background()
 
 @app.route("/register", methods=["POST"])
 @cross_origin()
