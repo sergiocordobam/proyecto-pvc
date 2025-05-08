@@ -29,6 +29,7 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	d.router.Get("/files/{user_id}", handler.HandleDocumentsListByUser())
 	d.router.Get("/files/download/{user_id}/all", handler.HandleReturnAllDownloadURL())
 	d.router.Delete("/files/", handler.HandleDeleteSelectedFiles())
+	d.router.Delete("/files/{user_id}/all", handler.HandleDeleteAllFiles())
 	d.ListRoutes()
 
 }

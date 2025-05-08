@@ -121,7 +121,7 @@ func (h *DocumentLoaderHandler) HandleDeleteSelectedFiles() http.HandlerFunc {
 			return
 		}
 
-		pkg.Success(w, http.StatusOK, "")
+		pkg.Success(w, http.StatusOK, "ok")
 	}
 }
 func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
