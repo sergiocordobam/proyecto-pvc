@@ -11,7 +11,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'DELETE_CITIZEN_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          urls: [process.env.RABBITMQ_HOST || 'amqp://localhost:5672'],
           queue: 'delete_citizen_queue',
           queueOptions: { durable: true },
         },
@@ -20,7 +20,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'DELETE_DOCUMENTS_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          urls: [process.env.RABBITMQ_HOST || 'amqp://localhost:5672'],
           queue: 'delete_documents_queue',
           queueOptions: { durable: true },
         },
@@ -29,7 +29,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'REGISTER_CITIZEN_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          urls: [process.env.RABBITMQ_HOST || 'amqp://localhost:5672'],
           queue: 'register_citizen_queue',
           queueOptions: { durable: true },
         },
@@ -38,7 +38,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'REGISTER_DOCUMENTS_CLIENT',
         transport: Transport.RMQ,
         options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          urls: [process.env.RABBITMQ_HOST || 'amqp://localhost:5672'],
           queue: 'register_documents_queue',
           queueOptions: { durable: true },
         },
