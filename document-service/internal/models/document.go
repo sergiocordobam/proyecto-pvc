@@ -9,7 +9,7 @@ import (
 
 const (
 	TemporalStatus = "temporal"
-	VerfiiedStatus = "verified"
+	VerifiedStatus = "verified"
 )
 
 type Document struct {

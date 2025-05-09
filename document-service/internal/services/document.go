@@ -6,9 +6,12 @@ import (
 	"document-service/internal/repository"
 	"document-service/internal/validator"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/labstack/gommon/log"
 )
 
 const EmptyStr = ""
@@ -217,6 +220,41 @@ func (d *DocumentLoadService) DeleteAllFilesInUserDirectory(ctx context.Context,
 
 	if err != nil {
 		return errors.New("DeleteAllFilesInUserDirectory: error deleting files")
+	}
+	return nil
+}
+func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.AuthDocRequest) error {
+	if len(req.Files) == 0 {
+		return errors.New("AuthDocuments: no documents to authorize")
+	}
+	var wg sync.WaitGroup
+	var errors []error
+	for i, document := range req.Files {
+		wg.Add(1)
+		go func(i int, document string) {
+			defer wg.Done()
+			newDoc := models.NewDocument(document, EmptyStr, EmptyStr, 0, req.Owner)
+			_, errAuth := d.repository.AuthDocument(ctx, newDoc)
+			if errAuth != nil {
+				log.Warn("AuthDocuments: error authorizing document", errAuth)
+				errors = append(errors, errAuth)
+				return
+			}
+			newMetadata := map[string]string{
+				"status": models.VerifiedStatus,
+			}
+			err := d.repository.SetMetadata(ctx, newDoc.Metadata.AbsPath, newMetadata)
+			if err != nil {
+				log.Warn("AuthDocuments: error setting metadata")
+				errors = append(errors, err)
+				return
+			}
+
+		}(i, document)
+	}
+	wg.Wait()
+	if len(errors) >= len(req.Files) {
+		return fmt.Errorf("AuthDocuments: all documents failed to authorize: %v", errors)
 	}
 	return nil
 }
