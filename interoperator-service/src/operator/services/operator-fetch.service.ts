@@ -38,6 +38,6 @@ export class OperatorFetchService {
 
     async getOperatorById(id: string): Promise<any> {
         const operators = await this.getOperators();
-        return operators.find((op) => op.id === id);
+        return operators.find((op) => op._id === id);
     }
 }
