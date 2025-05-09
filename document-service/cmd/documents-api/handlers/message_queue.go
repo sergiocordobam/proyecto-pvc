@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"document-service/internal/domain/interfaces"
 	"document-service/internal/domain/models"
 	"encoding/json"
@@ -18,10 +19,12 @@ func NewMessageHandler(service interfaces.DocumentServiceInterface) *MessageHand
 }
 
 type MessageHandlerInterface interface {
-	HandleMessage(message []byte) error
+	HandleDocumentsRegister(message []byte) error
+	HandleDeleteDirectory(message []byte) error
 }
 
-func (m *MessageHandler) HandleMessage(message []byte) error {
+func (m *MessageHandler) HandleDocumentsRegister(message []byte) error {
+	ctx := context.Background()
 	var requestRegisterDocs models.RegisterDocumentsMessage
 	if err := json.Unmarshal(message, &requestRegisterDocs); err != nil {
 		return err
@@ -29,8 +32,24 @@ func (m *MessageHandler) HandleMessage(message []byte) error {
 	if requestRegisterDocs.CitizenId == 0 {
 		return errors.New("CitizenId is required")
 	}
-	if len(requestRegisterDocs.Documents) == 0 {
-		return errors.New("Documents are required")
+	errTransfer := m.service.TransferDocsToCurrentBucket(ctx, requestRegisterDocs)
+	if errTransfer != nil {
+		return errTransfer
+	}
+	return nil
+}
+func (m *MessageHandler) HandleDeleteDirectory(message []byte) error {
+	ctx := context.Background()
+	var requestDeleteDocuments models.DeleteDocumentsMessage
+	if err := json.Unmarshal(message, &requestDeleteDocuments); err != nil {
+		return err
+	}
+	if requestDeleteDocuments.CitizenId == 0 {
+		return errors.New("CitizenId is required")
+	}
+	errDelete := m.service.DeleteAllFilesInUserDirectory(ctx, requestDeleteDocuments.CitizenId)
+	if errDelete != nil {
+		return errDelete
 	}
 	return nil
 }

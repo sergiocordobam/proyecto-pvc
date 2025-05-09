@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"document-service/internal/domain/interfaces"
 	"document-service/internal/domain/models"
 	"fmt"
+	"io"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -109,4 +111,25 @@ func (o *ObjectStorageRepository) AuthDocument(ctx context.Context, document mod
 		return "", err
 	}
 	return authResponse.Message, nil
+}
+
+func (o *ObjectStorageRepository) UploadFile(ctx context.Context, document models.Document, fileBytes []byte) error {
+
+	bucket := o.gcpclient.GetBucketPointer()
+	object := bucket.Object(document.Metadata.AbsPath)
+
+	wc := object.NewWriter(ctx)
+	wc.ContentType = document.Metadata.ContentType
+
+	wc.Metadata = document.Metadata.ToMapCustomMetadata()
+
+	if _, err := io.Copy(wc, bytes.NewReader(fileBytes)); err != nil {
+		return fmt.Errorf("io.Copy: %w", err)
+	}
+
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %w", err)
+	}
+
+	return nil
 }

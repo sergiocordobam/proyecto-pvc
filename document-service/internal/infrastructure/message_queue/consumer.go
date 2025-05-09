@@ -68,14 +68,15 @@ func (r *RabbitMQConsumer) Consume(queueName string) error {
 	go func() {
 		log.Println("Goroutine de procesamiento de mensajes iniciada", len(msgs))
 		for d := range msgs {
-			log.Printf("Mensaje recibido: %s", d.Body)
+			log.Printf("Mensaje recibido")
 
-			errHandleMessage := r.handler.HandleMessage(d.Body)
+			handler := r.GetHandlerByConsumer(queueName)
+			errHandleMessage := handler(d.Body)
 			if errHandleMessage != nil {
-				log.Printf("Error al procesar el mensaje: %s", err)
-				err = d.Nack(false, true)
+				log.Printf("Error al procesar el mensaje: %s", errHandleMessage)
+				err = d.Nack(false, false)
 				if err != nil {
-					log.Printf("Error al no confirmar mensaje: %s", err)
+					log.Printf("Error al no confirmar mensaje: %s", errHandleMessage)
 				} else {
 					log.Printf("Mensaje no confirmado y reenviado a la cola.")
 				}
@@ -128,4 +129,14 @@ func (r *RabbitMQConsumer) Connect() error {
 		time.Sleep(retryInterval)
 	}
 	return fmt.Errorf("Fallo al conectar a RabbitMQ después de %d intentos: %w", maxRetries, err)
+}
+func (r *RabbitMQConsumer) GetHandlerByConsumer(consumerName string) func(message []byte) error {
+	switch consumerName {
+	case "register_documents_queue":
+		return r.handler.HandleDocumentsRegister
+	case "delete_documents_queue":
+		return r.handler.HandleDeleteDirectory
+
+	}
+	return nil
 }

@@ -14,32 +14,31 @@ import (
 
 func main() {
 	app := configs.InitializeConfigsApp()
-	//rabbitMQConsumer := app.QueueConsumer
-	/*errConsumer := rabbitMQConsumer.Connect()
+	rabbitMQConsumer := app.QueueConsumer
+	errConsumer := rabbitMQConsumer.Connect()
 	if errConsumer != nil {
 		log.Fatalf("Error Connect RabbitMQ: %v", errConsumer)
 	}
 	defer rabbitMQConsumer.Connect()
-	defer app.Config.StorageClient.Close()*/
+	defer app.Config.StorageClient.Close()
 
 	r := chi.NewRouter()
 	router := routes.NewDocumentLoaderRoutes(r, app)
 	router.UseMiddlewares()
 	router.MapRoutes()
 
-	/*for _, queueName := range app.Config.QueueNames {
+	for _, queueName := range app.Config.QueueNames {
 		go rabbitMQConsumer.Consume(queueName)
-	}*/
+	}
 
 	log.Println("Server listening on :8080")
-	// Iniciar el servidor HTTP en una goroutine
+
 	go func() {
 		if err := http.ListenAndServe(":8080", r); err != nil {
 			log.Fatalf("Error al iniciar el servidor HTTP: %v", err)
 		}
 	}()
 
-	//Manejo de señales para un cierre seguro
 	sigChan := make(chan os.Signal, 2)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan //espera señal de interrupción
