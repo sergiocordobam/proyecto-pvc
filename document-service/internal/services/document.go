@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -83,7 +84,8 @@ func (d *DocumentLoadService) GetUserDocuments(ctx context.Context, userID int) 
 	}
 	filterDocs := make([]models.Document, len(docs))
 	for i, doc := range docs {
-		if doc.Metadata.Name != EmptyStr {
+		cleanName := strings.TrimSpace(doc.Metadata.Name)
+		if cleanName != EmptyStr {
 			filterDocs[i] = doc
 		}
 	}
@@ -226,9 +228,14 @@ func (d *DocumentLoadService) DeleteAllFilesInUserDirectory(ctx context.Context,
 		return errors.New("DeleteAllFilesInUserDirectory: user has no documents")
 	}
 	for _, doc := range allDocs {
+
+		if doc.Metadata.Name == "" {
+			continue
+		}
 		err := d.DeleteSelectedFileInUserDirectory(ctx, userID, doc.Metadata.Name)
 		if err != nil {
-			return err
+			log.Info("err")
+			continue
 		}
 	}
 
@@ -254,9 +261,9 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.Auth
 				mu.Unlock()
 				return
 			}
-			newMetadata := map[string]string{
-				"status": models.VerifiedStatus,
-			}
+			newDoc.Metadata.Status = models.VerifiedStatus
+			newMetadata := newDoc.Metadata.ToMapCustomMetadata()
+
 			err := d.repository.SetMetadata(ctx, newDoc.Metadata.AbsPath, newMetadata)
 			if err != nil {
 				log.Warn("AuthDocuments: error setting metadata")
