@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"document-service/cmd/pkg"
-	"document-service/internal/models"
-	"document-service/internal/services"
+	"document-service/internal/domain/interfaces"
+	models2 "document-service/internal/domain/models"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -11,22 +11,22 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type DocumentLoaderHandler struct {
-	Service services.DocumentServiceInterface
+type DocumentLoaderLoaderModules struct {
+	Service interfaces.DocumentServiceInterface
 }
 
-func NewDocumentLoaderHandler(service services.DocumentServiceInterface) *DocumentLoaderHandler {
-	return &DocumentLoaderHandler{
+func NewDocumentLoaderHandler(service interfaces.DocumentServiceInterface) *DocumentLoaderLoaderModules {
+	return &DocumentLoaderLoaderModules{
 		Service: service,
 	}
 }
-func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleDocumentUploadSignedURLRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 
-		var uploadRequest models.UploadRequest
+		var uploadRequest models2.UploadRequest
 		if err := json.NewDecoder(r.Body).Decode(&uploadRequest); err != nil {
 			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
 			return
@@ -40,19 +40,19 @@ func (h *DocumentLoaderHandler) HandleDocumentUploadSignedURLRequest() http.Hand
 		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
 	}
 }
-func (h *DocumentLoaderHandler) HandleDocumentDownloadSignedURLRequest() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleDocumentDownloadSignedURLRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-		var fileData models.Files
+		var fileData models2.Files
 		if err := json.NewDecoder(r.Body).Decode(&fileData); err != nil {
 			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
 		}
 		userID := chi.URLParam(r, "user_id")
 
 		userIDInt, err := strconv.Atoi(userID)
-		downloadRequest := models.DownloadRequest{
+		downloadRequest := models2.DownloadRequest{
 			UserID:   userIDInt,
 			FileName: fileData.FileName,
 		}
@@ -65,7 +65,7 @@ func (h *DocumentLoaderHandler) HandleDocumentDownloadSignedURLRequest() http.Ha
 		pkg.Success(w, uploadResponse.StatusCode, uploadResponse.DocumentsURL)
 	}
 }
-func (h *DocumentLoaderHandler) HandleDocumentsListByUser() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleDocumentsListByUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -85,7 +85,7 @@ func (h *DocumentLoaderHandler) HandleDocumentsListByUser() http.HandlerFunc {
 		pkg.Success(w, http.StatusOK, documents)
 	}
 }
-func (h *DocumentLoaderHandler) HandleReturnAllDownloadURL() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleReturnAllDownloadURL() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -105,26 +105,28 @@ func (h *DocumentLoaderHandler) HandleReturnAllDownloadURL() http.HandlerFunc {
 		pkg.Success(w, http.StatusOK, document)
 	}
 }
-func (h *DocumentLoaderHandler) HandleDeleteSelectedFiles() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleDeleteSelectedFile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-		var deleteReq models.DeleteRequest
-		if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
-			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, errParam := strconv.Atoi(userID)
+		if errParam != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", errParam.Error())
 			return
 		}
-		err := h.Service.DeleteSelectedFilesInUserDirectory(r.Context(), deleteReq.UserID, deleteReq.FileNames)
+		fileName := chi.URLParam(r, "file_name")
+		err := h.Service.DeleteSelectedFileInUserDirectory(r.Context(), userIDInt, fileName)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFile: %s", err.Error())
 			return
 		}
 
 		pkg.Success(w, http.StatusOK, "ok")
 	}
 }
-func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
+func (h *DocumentLoaderLoaderModules) HandleDeleteAllFiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -137,9 +139,28 @@ func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
 		}
 		err := h.Service.DeleteAllFilesInUserDirectory(r.Context(), userIDInt)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFile: %s", err.Error())
 			return
 		}
 		pkg.Success(w, http.StatusOK, "file deleted successfully")
+	}
+}
+func (h *DocumentLoaderLoaderModules) HandleAuthDocuments() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		var documents models2.AuthDocRequest
+		if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+			return
+		}
+		err := h.Service.AuthDocuments(r.Context(), documents)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleAuthDocuments: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, "ok")
 	}
 }

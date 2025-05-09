@@ -2,9 +2,7 @@ package routes
 
 import (
 	"document-service/cmd/documents-api/handlers"
-	"document-service/internal/infrastructure/apis/gcp"
-	"document-service/internal/repository"
-	"document-service/internal/services"
+	configDomain "document-service/internal/domain/configsDomain"
 	"fmt"
 
 	"github.com/go-chi/chi/v5"
@@ -14,22 +12,25 @@ import (
 
 type DocumentLoaderRoutes struct {
 	router    *chi.Mux
-	gcpClient *gcp.StorageClient
+	apiConfig *configDomain.Application
 }
 
-func NewDocumentLoaderRoutes(router *chi.Mux, gcpClient *gcp.StorageClient) *DocumentLoaderRoutes {
-	return &DocumentLoaderRoutes{router: router, gcpClient: gcpClient}
+func NewDocumentLoaderRoutes(router *chi.Mux, apiConfig *configDomain.Application) *DocumentLoaderRoutes {
+	return &DocumentLoaderRoutes{
+		router:    router,
+		apiConfig: apiConfig,
+	}
 }
 func (d *DocumentLoaderRoutes) MapRoutes() {
-	repo := repository.NewObjectStorageRepository(d.gcpClient)
-	service := services.NewDocumentLoadService(repo)
+	service := d.apiConfig.Service
 	handler := handlers.NewDocumentLoaderHandler(service)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
 	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())
 	d.router.Get("/files/{user_id}", handler.HandleDocumentsListByUser())
 	d.router.Get("/files/download/{user_id}/all", handler.HandleReturnAllDownloadURL())
-	d.router.Delete("/files/", handler.HandleDeleteSelectedFiles())
+	d.router.Delete("/files/{user_id}/{file_name}", handler.HandleDeleteSelectedFile())
 	d.router.Delete("/files/{user_id}/all", handler.HandleDeleteAllFiles())
+	d.router.Post("/auth/documents", handler.HandleAuthDocuments())
 	d.ListRoutes()
 
 }

@@ -1,29 +1,49 @@
 package main
 
 import (
-	"context"
+	"document-service/cmd/configs"
 	"document-service/cmd/documents-api/routes"
-	"document-service/internal/infrastructure/apis/gcp"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-
-	ctx := context.Background()
-	storageClient, err := gcp.NewStorageClient(ctx, "document-service-api-storage")
-	if err != nil {
-		log.Fatalf("Failed to create client: %v", err)
+	app := configs.InitializeConfigsApp()
+	rabbitMQConsumer := app.QueueConsumer
+	errConsumer := rabbitMQConsumer.Connect()
+	if errConsumer != nil {
+		log.Fatalf("Error Connect RabbitMQ: %v", errConsumer)
 	}
+	defer rabbitMQConsumer.Connect()
+	defer app.Config.StorageClient.Close()
+
 	r := chi.NewRouter()
-	router := routes.NewDocumentLoaderRoutes(r, storageClient)
+	router := routes.NewDocumentLoaderRoutes(r, app)
 	router.UseMiddlewares()
 	router.MapRoutes()
 
-	defer storageClient.Client.Close()
+	for _, queueName := range app.Config.QueueNames {
+		go rabbitMQConsumer.Consume(queueName)
+	}
 
 	log.Println("Server listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	// Iniciar el servidor HTTP en una goroutine
+	go func() {
+		if err := http.ListenAndServe(":8080", r); err != nil {
+			log.Fatalf("Error al iniciar el servidor HTTP: %v", err)
+		}
+	}()
+
+	//Manejo de señales para un cierre seguro
+	sigChan := make(chan os.Signal, 2)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan //espera señal de interrupción
+	log.Println("Recibida señal de terminación, cerrando...")
+
+	log.Println("Aplicación terminada")
 }

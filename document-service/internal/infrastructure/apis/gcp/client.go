@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"document-service/internal/domain/models"
 	"errors"
 	"fmt"
 	"strconv"
@@ -25,6 +26,10 @@ var (
 func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, error) {
 	var err error
 	var gcpClient *storage.Client
+	if BucketName == "" {
+		err = errors.New("bucket name is empty")
+		return nil, err
+	}
 	if singleClient != nil {
 		err = errors.New("gcp storage client already created")
 		return nil, err
@@ -76,7 +81,7 @@ func (s *StorageClient) SetObjectAttributes(ctx context.Context, objectHandler *
 	return nil
 }
 
-func (s *StorageClient) GenerateSignedURL(filename string, method string, expirationTime time.Time) (string, error) {
+func (s *StorageClient) GenerateSignedURL(filename string, method string, metadata models.Metadata, expirationTime time.Time) (string, error) {
 	methodMap := map[string]string{
 		"up":   "PUT",
 		"down": "GET",
@@ -84,12 +89,17 @@ func (s *StorageClient) GenerateSignedURL(filename string, method string, expira
 	if methodMap[method] == "" {
 		return "", fmt.Errorf("invalid method: %s", method)
 	}
-	signedConfiguration := &storage.SignedURLOptions{
+	signedConfiguration := storage.SignedURLOptions{
 		Scheme:  storage.SigningSchemeV4,
 		Method:  methodMap[method],
 		Expires: expirationTime,
+		Headers: []string{
+			"Content-Type",
+			"x-goog-meta-status:" + metadata.Status,
+			"x-goog-meta-document-type" + ":" + metadata.Type,
+		},
 	}
-	url, err := s.Client.Bucket(s.BucketName).SignedURL(filename, signedConfiguration)
+	url, err := s.Client.Bucket(s.BucketName).SignedURL(filename, &signedConfiguration)
 	if err != nil {
 		return "", fmt.Errorf("generateURL-Failed: Bucket(%q).SignedURL(%q, opts): %v", s.BucketName, filename, err)
 	}

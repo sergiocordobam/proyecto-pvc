@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"document-service/internal/infrastructure/apis/gcp"
-	"document-service/internal/models"
+	"document-service/internal/domain/interfaces"
+	"document-service/internal/domain/models"
 	"errors"
 	"fmt"
 	"time"
@@ -13,16 +13,20 @@ import (
 )
 
 type ObjectStorageRepository struct {
-	gcpclient gcp.StorageClientInterface
+	gcpclient        interfaces.StorageClientInterface
+	govCarpetaClient interfaces.GovCarpetaClientInterface
 }
 
-func NewObjectStorageRepository(client gcp.StorageClientInterface) *ObjectStorageRepository {
-	return &ObjectStorageRepository{gcpclient: client}
+func NewObjectStorageRepository(client interfaces.StorageClientInterface, govCarpetaClient interfaces.GovCarpetaClientInterface) *ObjectStorageRepository {
+	return &ObjectStorageRepository{
+		gcpclient:        client,
+		govCarpetaClient: govCarpetaClient,
+	}
 }
 
 func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Document) (string, time.Time, error) {
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
-	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "up", expiryTime)
+	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "up", document.Metadata, expiryTime)
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -33,7 +37,7 @@ func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Docu
 		return "", time.Time{}, errors.New("object not found")
 	}
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
-	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "down", expiryTime)
+	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "down", document.Metadata, expiryTime)
 	if err != nil {
 		return "", expiryTime, err
 	}
@@ -47,7 +51,12 @@ func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID i
 		return userDocumentsList, err
 	}
 	for _, obj := range objListAttributes {
-		metadata := models.NewMetadata(obj.Name, "", obj.ContentType, int(obj.Size), userID)
+		gcpMetadata := obj.Metadata
+		metadata := models.NewMetadata(obj.Name, "Indefinido", obj.ContentType, int(obj.Size), userID)
+		if gcpMetadata != nil {
+			metadata.Status = gcpMetadata["status"]
+			metadata.Type = gcpMetadata["document-type"]
+		}
 		userDocumentsList = append(userDocumentsList, models.Document{
 			Metadata: metadata,
 		})
@@ -85,4 +94,20 @@ func (o *ObjectStorageRepository) CreateUserDirectory(ctx context.Context, userI
 
 func (o *ObjectStorageRepository) DeleteFile(ctx context.Context, fileName string) error {
 	return o.gcpclient.DeleteObject(ctx, fileName)
+}
+func (o *ObjectStorageRepository) SetMetadata(ctx context.Context, fileName string, metadata map[string]string) error {
+	objectHandler := o.gcpclient.GetBucketPointer().Object(fileName)
+	attrs := storage.ObjectAttrsToUpdate{
+		Metadata: metadata,
+	}
+	return o.gcpclient.SetObjectAttributes(ctx, objectHandler, attrs)
+}
+func (o *ObjectStorageRepository) AuthDocument(ctx context.Context, document models.Document) (string, error) {
+	metadata := models.NewMetadata(document.Metadata.Name, document.Metadata.Status, document.Metadata.Type, document.Metadata.Size, document.Metadata.OwnerID)
+	document.Metadata = metadata
+	authResponse, err := o.govCarpetaClient.AuthenticateDocument(document.Metadata.OwnerID, document.URL, document.Metadata.Name)
+	if err != nil {
+		return "", err
+	}
+	return authResponse.Message, nil
 }

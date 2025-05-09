@@ -9,7 +9,7 @@ import (
 
 const (
 	TemporalStatus = "temporal"
-	VerfiiedStatus = "verified"
+	VerifiedStatus = "verified"
 )
 
 type Document struct {
@@ -37,7 +37,7 @@ func NewMetadata(name, documentType, contentType string, size, ownerId int) Meta
 		Type:         documentType,
 		CreationDate: currentDate,
 		ContentType:  contentType,
-		AbsPath:      fmt.Sprintf("%d/%s", ownerId, name),
+		AbsPath:      fmt.Sprintf("%d/%s", ownerId, newName),
 		Status:       TemporalStatus,
 	}
 }
