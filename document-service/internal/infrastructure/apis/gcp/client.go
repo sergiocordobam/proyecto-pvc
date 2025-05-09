@@ -89,15 +89,19 @@ func (s *StorageClient) GenerateSignedURL(filename string, method string, metada
 	if methodMap[method] == "" {
 		return "", fmt.Errorf("invalid method: %s", method)
 	}
+	headers := []string{}
+	if method == "up" {
+		headers = []string{
+			"Content-Type",
+			"x-goog-meta-status:" + metadata.Status,
+			"x-goog-meta-document-type" + ":" + metadata.Type,
+		}
+	}
 	signedConfiguration := storage.SignedURLOptions{
 		Scheme:  storage.SigningSchemeV4,
 		Method:  methodMap[method],
 		Expires: expirationTime,
-		Headers: []string{
-			"Content-Type",
-			"x-goog-meta-status:" + metadata.Status,
-			"x-goog-meta-document-type" + ":" + metadata.Type,
-		},
+		Headers: headers,
 	}
 	url, err := s.Client.Bucket(s.BucketName).SignedURL(filename, &signedConfiguration)
 	if err != nil {

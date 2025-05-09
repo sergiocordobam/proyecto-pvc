@@ -74,7 +74,17 @@ func (d *DocumentLoadService) GetUserDocuments(ctx context.Context, userID int) 
 	if err := d.validator.ValidateUserID(userID); err != nil {
 		return []models2.Document{}, err
 	}
-	return d.repository.GetUserDocuments(ctx, userID)
+	docs, err := d.repository.GetUserDocuments(ctx, userID)
+	if err != nil {
+		return []models2.Document{}, errors.New("GetUserDocuments: error getting user documents")
+	}
+	filterDocs := make([]models2.Document, len(docs))
+	for i, doc := range docs {
+		if doc.Metadata.Name != EmptyStr {
+			filterDocs[i] = doc
+		}
+	}
+	return filterDocs, nil
 }
 func (d *DocumentLoadService) callDocumentsURL(userID int, fileUploadInfo []models2.FileUploadInfo) []models2.SignedUrlInfo {
 	var wg sync.WaitGroup
@@ -128,7 +138,8 @@ func (d *DocumentLoadService) callDocumentsURLDownload(userID int, fileNames []s
 			url, expirationTime, errObj = d.repository.GenerateDownloadSignedURL(document)
 
 			if errObj != nil {
-				return
+				log.Warn("callDocumentsURLDownload: error generating download signed URL", errObj)
+
 			}
 
 			signedURLInfo.FileName = document.Metadata.Name
@@ -255,6 +266,26 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models2.Aut
 	wg.Wait()
 	if len(errors) >= len(req.Files) {
 		return fmt.Errorf("AuthDocuments: all documents failed to authorize: %v", errors)
+	}
+	return nil
+}
+func (d *DocumentLoadService) TransferDocsToCurrentBucket(ctx context.Context, registerDocsReq models2.RegisterDocumentsMessage) error {
+	if len(registerDocsReq.Documents) == 0 {
+		return errors.New("TransferDocsToCurrentBucket: no documents to transfer")
+	}
+	var wg sync.WaitGroup
+	var errors []error
+	for i, document := range registerDocsReq.Documents {
+		wg.Add(1)
+		go func(i int, document string) {
+			defer wg.Done()
+			//downloadDoc := d.DownloadFiles()
+
+		}(i, document)
+	}
+	wg.Wait()
+	if len(errors) >= len(registerDocsReq.Documents) {
+		return fmt.Errorf("TransferDocsToCurrentBucket: all documents failed to authorize: %v", errors)
 	}
 	return nil
 }

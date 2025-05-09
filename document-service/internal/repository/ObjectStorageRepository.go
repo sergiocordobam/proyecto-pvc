@@ -4,7 +4,6 @@ import (
 	"context"
 	"document-service/internal/domain/interfaces"
 	"document-service/internal/domain/models"
-	"errors"
 	"fmt"
 	"time"
 
@@ -33,8 +32,8 @@ func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Docume
 	return url, expiryTime, nil
 }
 func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Document) (string, time.Time, error) {
-	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.Name) {
-		return "", time.Time{}, errors.New("object not found")
+	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.AbsPath) {
+		return "", time.Time{}, fmt.Errorf("object does not exist")
 	}
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
 	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "down", document.Metadata, expiryTime)

@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"document-service/internal/domain/interfaces"
-	"fmt"
+	"document-service/internal/domain/models"
+	"encoding/json"
+	"errors"
 )
 
 type MessageHandler struct {
@@ -20,6 +22,15 @@ type MessageHandlerInterface interface {
 }
 
 func (m *MessageHandler) HandleMessage(message []byte) error {
-	fmt.Println("Received message:", string(message))
+	var requestRegisterDocs models.RegisterDocumentsMessage
+	if err := json.Unmarshal(message, &requestRegisterDocs); err != nil {
+		return err
+	}
+	if requestRegisterDocs.CitizenId == 0 {
+		return errors.New("CitizenId is required")
+	}
+	if len(requestRegisterDocs.Documents) == 0 {
+		return errors.New("Documents are required")
+	}
 	return nil
 }

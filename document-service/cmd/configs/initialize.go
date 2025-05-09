@@ -21,7 +21,6 @@ var (
 
 func InitializeConfigsApp() *configsDomain.Application {
 	ctx := context.Background()
-	// Load configuration
 	config, err := loadConfig()
 	storageClient, err := gcp.NewStorageClient(ctx, config.BucketName)
 	if err != nil {
