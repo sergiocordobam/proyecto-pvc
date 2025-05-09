@@ -2,7 +2,7 @@ package gcp
 
 import (
 	"context"
-	"document-service/internal/models"
+	"document-service/internal/domain/models"
 	"errors"
 	"fmt"
 	"strconv"
@@ -26,6 +26,10 @@ var (
 func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, error) {
 	var err error
 	var gcpClient *storage.Client
+	if BucketName == "" {
+		err = errors.New("bucket name is empty")
+		return nil, err
+	}
 	if singleClient != nil {
 		err = errors.New("gcp storage client already created")
 		return nil, err

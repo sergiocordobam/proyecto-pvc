@@ -2,40 +2,44 @@ package gov_carpeta
 
 import (
 	"bytes"
-	"document-service/internal/models"
+	"document-service/internal/domain/configsDomain"
+	models2 "document-service/internal/domain/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
-)
 
-type GovCarpetaClientInterface interface {
-	AuthenticateDocument(idCitizen int, documentURL string, documentTitle string) (*models.AuthenticateDocumentResponse, error)
-}
+	"github.com/hashicorp/go-retryablehttp"
+)
 
 type GovCarpetaClient struct {
 	baseURL    string
-	httpClient *http.Client
+	httpClient *retryablehttp.Client
 }
 
-func NewGovCarpetaClient(baseURL string, timeout time.Duration) *GovCarpetaClient {
-	if timeout == 0 {
-		timeout = 30 * time.Second // Default timeout
+func NewGovCarpetaClient(config configsDomain.APIConfig) *GovCarpetaClient {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = config.Retry.Quantity
+	retryClient.RetryWaitMin = config.Retry.Min
+	retryClient.RetryWaitMax = config.Retry.Max
+
+	if config.Retry.Strategy == "exponential" {
+		retryClient.Backoff = retryablehttp.DefaultBackoff
+	} else {
+		retryClient.Backoff = retryablehttp.LinearJitterBackoff
 	}
 
+	retryClient.HTTPClient.Timeout = config.TimeOut
 	return &GovCarpetaClient{
-		baseURL: baseURL,
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
+		baseURL:    config.BaseURL,
+		httpClient: retryClient,
 	}
 }
 
-func (c *GovCarpetaClient) AuthenticateDocument(idCitizen int, documentURL string, documentTitle string) (*models.AuthenticateDocumentResponse, error) {
+func (c *GovCarpetaClient) AuthenticateDocument(idCitizen int, documentURL string, documentTitle string) (*models2.AuthenticateDocumentResponse, error) {
 	endpoint := "/apis/authenticateDocument"
 	url := fmt.Sprintf("https://%s%s", c.baseURL, endpoint)
 
-	requestBody := models.AuthenticateGcpDocumentRequest{
+	requestBody := models2.AuthenticateGcpDocumentRequest{
 		IdCitizen:     idCitizen,
 		UrlDocument:   documentURL,
 		DocumentTitle: documentTitle,
@@ -45,8 +49,7 @@ func (c *GovCarpetaClient) AuthenticateDocument(idCitizen int, documentURL strin
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %w", err)
 	}
-
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(bodyBytes))
+	req, err := retryablehttp.NewRequest(http.MethodPut, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -67,7 +70,7 @@ func (c *GovCarpetaClient) AuthenticateDocument(idCitizen int, documentURL strin
 	if err := json.NewDecoder(resp.Body).Decode(&responseString); err != nil {
 		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
-	response := models.AuthenticateDocumentResponse{
+	response := models2.AuthenticateDocumentResponse{
 		Code:    resp.StatusCode,
 		Message: responseString,
 	}

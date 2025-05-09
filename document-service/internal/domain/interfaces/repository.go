@@ -1,8 +1,8 @@
-package repository
+package interfaces
 
 import (
 	"context"
-	"document-service/internal/models"
+	"document-service/internal/domain/models"
 	"time"
 )
 

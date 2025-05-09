@@ -1,8 +1,8 @@
-package gcp
+package interfaces
 
 import (
 	"context"
-	"document-service/internal/models"
+	"document-service/internal/domain/models"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -17,4 +17,7 @@ type StorageClientInterface interface {
 	ListObjectsWithPrefix(ctx context.Context, prefix string) ([]storage.ObjectAttrs, error)
 	GetBucketPointer() *storage.BucketHandle
 	Close() error
+}
+type GovCarpetaClientInterface interface {
+	AuthenticateDocument(idCitizen int, documentURL string, documentTitle string) (*models.AuthenticateDocumentResponse, error)
 }
