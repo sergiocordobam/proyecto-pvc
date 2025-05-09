@@ -36,7 +36,7 @@ import axios from 'axios';
 export class CitizenService {
     private readonly authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://localhost:4000';
 
-    @EventPattern('fetch_citizen_info')
+    //@EventPattern('fetch_citizen_info')
     async fetchCitizenInfo(@Payload() data: { citizenId: string }): Promise<any> {
         try {
             console.log(`Fetching citizen info for ID: ${data.citizenId}`);
