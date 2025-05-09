@@ -58,8 +58,8 @@ services:
       - OPERATOR_TRANSFER_ENDPOINT=http://localhost:8000/comunication/transfers/process-transfer
       - OPERATOR_TRANSFER_ENDPOINT_CONFIRM=http://localhost:8000/comunication/transfers/confirm-citizen-transfer
       - API_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis
-      - AUTH_SERVICE_URL=http://auth-service:4000
-      - DOCUMENT_SERVICE_URL=http://document-service:5000
+      - AUTH_SERVICE_URL=http://auth-service:5000
+      - DOCUMENT_SERVICE_URL=http://document-service:8080
       - RABBITMQ_URL=amqp://rabbitmq:5672   # Update to the internal RabbitMQ service URL
     depends_on:
       - rabbitmq
