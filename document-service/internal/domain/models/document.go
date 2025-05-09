@@ -27,6 +27,13 @@ type Metadata struct {
 	Status       string    `json:"status,omitempty"`
 }
 
+func (m *Metadata) ToMapCustomMetadata() map[string]string {
+	return map[string]string{
+		"status":        m.Status,
+		"document-type": m.Type,
+	}
+}
+
 func NewMetadata(name, documentType, contentType string, size, ownerId int) Metadata {
 	currentDate := time.Now()
 	newName := strings.Replace(name, strconv.Itoa(ownerId)+"/", "", -1)

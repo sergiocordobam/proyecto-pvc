@@ -2,6 +2,7 @@ bucket_name: document-service-api-storage
 rabbitMQURL: amqp://guest:guest@rabbitmq:5672/
 queue_names:
   - register_documents_queue
+  - delete_documents_queue
 gov_carpeta_conf:
   base_url: govcarpeta-apis-4905ff3c005b.herokuapp.com
   timeout: 5s
