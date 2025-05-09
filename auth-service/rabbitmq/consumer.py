@@ -2,14 +2,51 @@ import pika
 import json
 import os
 import time
+import requests
 
 def handle_register_citizen(data):
     print("Handling register citizen:", data)
+
+    resp_json = {
+        "full_name": data["full_name"],
+        "document_id": str(data["document_id"]),
+        "document_type": "CC",
+        "address": "Carrera 1 # 2 - 3",
+        "phone": "3003003030",
+        "email": data["email"],
+        "password": data["password"],
+        "terms_accepted": data["terms_accepted"]
+    }
+    
+    try:
+        response = requests.post("http://auth-service:8000/auth/register", json=resp_json)
+        print("Forwarded data, status:", response.status_code)
+        print("Response body:", response.text)
+    except Exception as e:
+        print("Failed to insert user:", str(e))
+
+def handle_delete_citizen(data):
+    print("Handling citizen delete:", data)
+
+    resp_json = {
+        "document_id": data["citizenId"]
+    }
+
+    try:
+        response = requests.post("http://auth-service:8000/auth/delete_user", json=resp_json)
+        print("Forwarded data, status:", response.status_code)
+        print("Response body:", response.text)
+    except Exception as e:
+        print("Failed to delete user:", str(e))    
 
 def start_rabbitmq_consumer():
     def callback_register(ch, method, properties, body):
         data = json.loads(body)
         handle_register_citizen(data)
+
+    def callback_delete(ch, method, properties, body):
+        data = json.loads(body)
+        handle_delete_citizen(data)
 
     rabbitmq_user = os.getenv('RABBITMQ_DEFAULT_USER', 'guest')
     rabbitmq_password = os.getenv('RABBITMQ_DEFAULT_PASS', 'guest')
@@ -32,12 +69,14 @@ def start_rabbitmq_consumer():
             print("channel")
 
             channel.queue_declare(queue='register_citizen_queue', durable=True)
+            channel.queue_declare(queue='delete_citizen_queue', durable=True)
             print("queue declare")
 
             channel.basic_qos(prefetch_count=1)
             print("prefetch")
 
             channel.basic_consume(queue='register_citizen_queue', on_message_callback=callback_register, auto_ack=True)
+            channel.basic_consume(queue='delete_citizen_queue', on_message_callback=callback_delete, auto_ack=True)
             print("channel consume")
 
             print(" [*] Waiting for messages. To exit press CTRL+C")
