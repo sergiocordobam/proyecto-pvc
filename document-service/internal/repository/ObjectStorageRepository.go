@@ -2,9 +2,8 @@ package repository
 
 import (
 	"context"
-	"document-service/internal/infrastructure/apis/gcp"
-	"document-service/internal/infrastructure/apis/gov_carpeta"
-	"document-service/internal/models"
+	"document-service/internal/domain/interfaces"
+	"document-service/internal/domain/models"
 	"errors"
 	"fmt"
 	"time"
@@ -14,11 +13,11 @@ import (
 )
 
 type ObjectStorageRepository struct {
-	gcpclient        gcp.StorageClientInterface
-	govCarpetaClient gov_carpeta.GovCarpetaClientInterface
+	gcpclient        interfaces.StorageClientInterface
+	govCarpetaClient interfaces.GovCarpetaClientInterface
 }
 
-func NewObjectStorageRepository(client gcp.StorageClientInterface, govCarpetaClient gov_carpeta.GovCarpetaClientInterface) *ObjectStorageRepository {
+func NewObjectStorageRepository(client interfaces.StorageClientInterface, govCarpetaClient interfaces.GovCarpetaClientInterface) *ObjectStorageRepository {
 	return &ObjectStorageRepository{
 		gcpclient:        client,
 		govCarpetaClient: govCarpetaClient,

@@ -2,10 +2,7 @@ package routes
 
 import (
 	"document-service/cmd/documents-api/handlers"
-	"document-service/internal/infrastructure/apis/gcp"
-	"document-service/internal/infrastructure/apis/gov_carpeta"
-	"document-service/internal/repository"
-	"document-service/internal/services"
+	configDomain "document-service/internal/domain/configsDomain"
 	"fmt"
 
 	"github.com/go-chi/chi/v5"
@@ -14,21 +11,18 @@ import (
 )
 
 type DocumentLoaderRoutes struct {
-	router           *chi.Mux
-	gcpClient        gcp.StorageClientInterface
-	govCarpetaClient gov_carpeta.GovCarpetaClientInterface
+	router    *chi.Mux
+	apiConfig *configDomain.Application
 }
 
-func NewDocumentLoaderRoutes(router *chi.Mux, gcpClient gcp.StorageClientInterface, govCarpetaClient gov_carpeta.GovCarpetaClientInterface) *DocumentLoaderRoutes {
+func NewDocumentLoaderRoutes(router *chi.Mux, apiConfig *configDomain.Application) *DocumentLoaderRoutes {
 	return &DocumentLoaderRoutes{
-		router:           router,
-		gcpClient:        gcpClient,
-		govCarpetaClient: govCarpetaClient,
+		router:    router,
+		apiConfig: apiConfig,
 	}
 }
 func (d *DocumentLoaderRoutes) MapRoutes() {
-	repo := repository.NewObjectStorageRepository(d.gcpClient, d.govCarpetaClient)
-	service := services.NewDocumentLoadService(repo)
+	service := d.apiConfig.Service
 	handler := handlers.NewDocumentLoaderHandler(service)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
 	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())

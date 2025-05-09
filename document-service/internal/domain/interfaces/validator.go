@@ -1,4 +1,4 @@
-package validator
+package interfaces
 
 type ReqValidatorInterface interface {
 	ValidateUserID(userID int) error
