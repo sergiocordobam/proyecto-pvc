@@ -3,6 +3,7 @@ package routes
 import (
 	"document-service/cmd/documents-api/handlers"
 	"document-service/internal/infrastructure/apis/gcp"
+	"document-service/internal/infrastructure/apis/gov_carpeta"
 	"document-service/internal/repository"
 	"document-service/internal/services"
 	"fmt"
@@ -13,15 +14,20 @@ import (
 )
 
 type DocumentLoaderRoutes struct {
-	router    *chi.Mux
-	gcpClient *gcp.StorageClient
+	router           *chi.Mux
+	gcpClient        gcp.StorageClientInterface
+	govCarpetaClient gov_carpeta.GovCarpetaClientInterface
 }
 
-func NewDocumentLoaderRoutes(router *chi.Mux, gcpClient *gcp.StorageClient) *DocumentLoaderRoutes {
-	return &DocumentLoaderRoutes{router: router, gcpClient: gcpClient}
+func NewDocumentLoaderRoutes(router *chi.Mux, gcpClient gcp.StorageClientInterface, govCarpetaClient gov_carpeta.GovCarpetaClientInterface) *DocumentLoaderRoutes {
+	return &DocumentLoaderRoutes{
+		router:           router,
+		gcpClient:        gcpClient,
+		govCarpetaClient: govCarpetaClient,
+	}
 }
 func (d *DocumentLoaderRoutes) MapRoutes() {
-	repo := repository.NewObjectStorageRepository(d.gcpClient)
+	repo := repository.NewObjectStorageRepository(d.gcpClient, d.govCarpetaClient)
 	service := services.NewDocumentLoadService(repo)
 	handler := handlers.NewDocumentLoaderHandler(service)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
@@ -30,6 +36,7 @@ func (d *DocumentLoaderRoutes) MapRoutes() {
 	d.router.Get("/files/download/{user_id}/all", handler.HandleReturnAllDownloadURL())
 	d.router.Delete("/files/{user_id}/{file_name}", handler.HandleDeleteSelectedFile())
 	d.router.Delete("/files/{user_id}/all", handler.HandleDeleteAllFiles())
+	d.router.Post("/auth/documents", handler.HandleAuthDocuments())
 	d.ListRoutes()
 
 }

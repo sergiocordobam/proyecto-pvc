@@ -12,4 +12,5 @@ type DocumentServiceInterface interface {
 	GetUserDocuments(ctx context.Context, userID int) ([]models.Document, error)
 	DeleteSelectedFileInUserDirectory(ctx context.Context, userID int, files string) error
 	DeleteAllFilesInUserDirectory(ctx context.Context, userID int) error
+	AuthDocuments(ctx context.Context, request models.AuthDocRequest) error
 }

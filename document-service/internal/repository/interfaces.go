@@ -13,4 +13,5 @@ type ObjectStorageRepositoryInterface interface {
 	CreateUserDirectory(ctx context.Context, userID int) error
 	DeleteFile(ctx context.Context, fileName string) error
 	SetMetadata(ctx context.Context, fileName string, metadata map[string]string) error
+	AuthDocument(ctx context.Context, document models.Document) (string, error)
 }

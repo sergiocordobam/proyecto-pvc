@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"document-service/internal/infrastructure/apis/gcp"
+	"document-service/internal/infrastructure/apis/gov_carpeta"
 	"document-service/internal/models"
 	"errors"
 	"fmt"
@@ -13,11 +14,15 @@ import (
 )
 
 type ObjectStorageRepository struct {
-	gcpclient gcp.StorageClientInterface
+	gcpclient        gcp.StorageClientInterface
+	govCarpetaClient gov_carpeta.GovCarpetaClientInterface
 }
 
-func NewObjectStorageRepository(client gcp.StorageClientInterface) *ObjectStorageRepository {
-	return &ObjectStorageRepository{gcpclient: client}
+func NewObjectStorageRepository(client gcp.StorageClientInterface, govCarpetaClient gov_carpeta.GovCarpetaClientInterface) *ObjectStorageRepository {
+	return &ObjectStorageRepository{
+		gcpclient:        client,
+		govCarpetaClient: govCarpetaClient,
+	}
 }
 
 func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Document) (string, time.Time, error) {
@@ -48,13 +53,11 @@ func (o *ObjectStorageRepository) GetUserDocuments(ctx context.Context, userID i
 	}
 	for _, obj := range objListAttributes {
 		gcpMetadata := obj.Metadata
-		var status, documentType string
-		metadata := models.NewMetadata(obj.Name, documentType, obj.ContentType, int(obj.Size), userID)
+		metadata := models.NewMetadata(obj.Name, "Indefinido", obj.ContentType, int(obj.Size), userID)
 		if gcpMetadata != nil {
 			metadata.Status = gcpMetadata["status"]
-			metadata.Type = gcpMetadata["documentType"]
+			metadata.Type = gcpMetadata["document-type"]
 		}
-		metadata.Status = status
 		userDocumentsList = append(userDocumentsList, models.Document{
 			Metadata: metadata,
 		})
@@ -99,4 +102,13 @@ func (o *ObjectStorageRepository) SetMetadata(ctx context.Context, fileName stri
 		Metadata: metadata,
 	}
 	return o.gcpclient.SetObjectAttributes(ctx, objectHandler, attrs)
+}
+func (o *ObjectStorageRepository) AuthDocument(ctx context.Context, document models.Document) (string, error) {
+	metadata := models.NewMetadata(document.Metadata.Name, document.Metadata.Status, document.Metadata.Type, document.Metadata.Size, document.Metadata.OwnerID)
+	document.Metadata = metadata
+	authResponse, err := o.govCarpetaClient.AuthenticateDocument(document.Metadata.OwnerID, document.URL, document.Metadata.Name)
+	if err != nil {
+		return "", err
+	}
+	return authResponse.Message, nil
 }
