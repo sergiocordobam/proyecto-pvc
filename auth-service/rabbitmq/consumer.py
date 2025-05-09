@@ -66,7 +66,7 @@ def start_rabbitmq_consumer():
 
             connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq", credentials=credentials, heartbeat=600, blocked_connection_timeout=300))
             print("conn", flush=True)
-            
+
             channel = connection.channel()
             print("channel", flush=True)
 
@@ -81,13 +81,13 @@ def start_rabbitmq_consumer():
             channel.basic_consume(queue='delete_citizen_queue', on_message_callback=callback_delete, auto_ack=True)
             print("channel consume", flush=True)
 
-            print(" [*] Waiting for messages. To exit press CTRL+C",flush=True)
+            print(" [*] Waiting for messages. To exit press CTRL+C", flush=True)
             channel.start_consuming()
 
             break
         except Exception as e:
-            print(f"Connection failed: {e.__class__.__name__} - {e}. Retrying...")
+            print(f"Connection failed: {e.__class__.__name__} - {e}. Retrying...", flush=True)
             time.sleep(5)
 
     else:
-        print("Failed to connect to RabbitMQ after several attempts. Exiting.")
+        print("Failed to connect to RabbitMQ after several attempts. Exiting.", flush=True)
