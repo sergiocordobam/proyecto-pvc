@@ -145,3 +145,22 @@ func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
 		pkg.Success(w, http.StatusOK, "file deleted successfully")
 	}
 }
+func (h *DocumentLoaderHandler) HandleAuthDocuments() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+		var documents models.AuthDocRequest
+		if err := json.NewDecoder(r.Body).Decode(&documents); err != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+			return
+		}
+		err := h.Service.AuthDocuments(r.Context(), documents)
+		if err != nil {
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleAuthDocuments: %s", err.Error())
+			return
+		}
+
+		pkg.Success(w, http.StatusOK, "ok")
+	}
+}

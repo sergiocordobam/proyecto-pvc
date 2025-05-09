@@ -5,7 +5,7 @@ import time
 import requests
 
 def handle_register_citizen(data):
-    print("Handling register citizen:", data)
+    print("Handling register citizen:", data, flush=True)
 
     resp_json = {
         "full_name": data["full_name"],
@@ -20,13 +20,13 @@ def handle_register_citizen(data):
     
     try:
         response = requests.post("http://auth-service:8000/auth/register", json=resp_json)
-        print("Forwarded data, status:", response.status_code)
-        print("Response body:", response.text)
+        print("Forwarded data, status:", response.status_code, flush=True)
+        print("Response body:", response.text, flush=True)
     except Exception as e:
-        print("Failed to insert user:", str(e))
+        print("Failed to insert user:", str(e), flush=True)
 
 def handle_delete_citizen(data):
-    print("Handling citizen delete:", data)
+    print("Handling citizen delete:", data, flush=True)
 
     resp_json = {
         "document_id": data["citizenId"]
@@ -34,10 +34,10 @@ def handle_delete_citizen(data):
 
     try:
         response = requests.post("http://auth-service:8000/auth/delete_user", json=resp_json)
-        print("Forwarded data, status:", response.status_code)
-        print("Response body:", response.text)
+        print("Forwarded data, status:", response.status_code, flush=True)
+        print("Response body:", response.text, flush=True)
     except Exception as e:
-        print("Failed to delete user:", str(e))    
+        print("Failed to delete user:", str(e), flush=True)    
 
 def start_rabbitmq_consumer():
     def callback_register(ch, method, properties, body):
@@ -60,26 +60,28 @@ def start_rabbitmq_consumer():
             print("Waiting 15s to ensure RabbitMQ is ready...")
             time.sleep(15)
 
-            print(f"Attempting to connect to RabbitMQ at {rabbitmq_host}...")
-            print(f"Attempting to connect to RabbitMQ at {rabbitmq_password}...")
-            print(f"Attempting to connect to RabbitMQ at {rabbitmq_user}...")
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_host}...", flush=True)
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_password}...", flush=True)
+            print(f"Attempting to connect to RabbitMQ at {rabbitmq_user}...", flush=True)
+
             connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq", credentials=credentials, heartbeat=600, blocked_connection_timeout=300))
-            print("conn")
+            print("conn", flush=True)
+            
             channel = connection.channel()
-            print("channel")
+            print("channel", flush=True)
 
             channel.queue_declare(queue='register_citizen_queue', durable=True)
             channel.queue_declare(queue='delete_citizen_queue', durable=True)
-            print("queue declare")
+            print("queue declare", flush=True)
 
             channel.basic_qos(prefetch_count=1)
-            print("prefetch")
+            print("prefetch", flush=True)
 
             channel.basic_consume(queue='register_citizen_queue', on_message_callback=callback_register, auto_ack=True)
             channel.basic_consume(queue='delete_citizen_queue', on_message_callback=callback_delete, auto_ack=True)
-            print("channel consume")
+            print("channel consume", flush=True)
 
-            print(" [*] Waiting for messages. To exit press CTRL+C")
+            print(" [*] Waiting for messages. To exit press CTRL+C",flush=True)
             channel.start_consuming()
 
             break
