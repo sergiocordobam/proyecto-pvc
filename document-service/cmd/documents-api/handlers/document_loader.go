@@ -105,19 +105,21 @@ func (h *DocumentLoaderHandler) HandleReturnAllDownloadURL() http.HandlerFunc {
 		pkg.Success(w, http.StatusOK, document)
 	}
 }
-func (h *DocumentLoaderHandler) HandleDeleteSelectedFiles() http.HandlerFunc {
+func (h *DocumentLoaderHandler) HandleDeleteSelectedFile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-		var deleteReq models.DeleteRequest
-		if err := json.NewDecoder(r.Body).Decode(&deleteReq); err != nil {
-			pkg.Error(w, http.StatusBadRequest, "Invalid request body: ", err.Error())
+		userID := chi.URLParam(r, "user_id")
+		userIDInt, errParam := strconv.Atoi(userID)
+		if errParam != nil {
+			pkg.Error(w, http.StatusBadRequest, "Invalid user ID: ", errParam.Error())
 			return
 		}
-		err := h.Service.DeleteSelectedFilesInUserDirectory(r.Context(), deleteReq.UserID, deleteReq.FileNames)
+		fileName := chi.URLParam(r, "file_name")
+		err := h.Service.DeleteSelectedFileInUserDirectory(r.Context(), userIDInt, fileName)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFile: %s", err.Error())
 			return
 		}
 
@@ -137,7 +139,7 @@ func (h *DocumentLoaderHandler) HandleDeleteAllFiles() http.HandlerFunc {
 		}
 		err := h.Service.DeleteAllFilesInUserDirectory(r.Context(), userIDInt)
 		if err != nil {
-			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFiles: %s", err.Error())
+			pkg.Error(w, http.StatusFailedDependency, "Error HandleDeleteSelectedFile: %s", err.Error())
 			return
 		}
 		pkg.Success(w, http.StatusOK, "file deleted successfully")
