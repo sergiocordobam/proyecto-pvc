@@ -1,6 +1,7 @@
 from firebase_admin import auth
 from firebase_admin import firestore
 from firebase.firebase_initialization import initialize_firebase
+import requests
 
 initialize_firebase()
 db = firestore.client()
@@ -38,6 +39,18 @@ class UserResetPassword:
         if update_data:
             self.db.collection('users').document(user_doc.id).update(update_data)
             print("Firestore user data updated:", update_data, flush=True)
+
+            send_email = requests.post("http://auth-service:5000/publish_notifications",
+                                       json={
+                                            "event": "register",
+                                            "user": 1234567890,
+                                            "name": "Reset Password",
+                                            "user_email": email,
+                                            "extra_data": {
+                                                "title": "Actualiza tu contraseña por favor",
+                                                "body": "http://localhost:8000"
+                                            }
+                                        })
             return f"Firestore user data updated: {update_data}"
         else:
             print("No Firestore fields to update.", flush=True)

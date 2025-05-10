@@ -74,6 +74,18 @@ class UserRegister:
                 print("501", flush=True)
                 return {'error': 'El ciudadano ya se encuentra registrado'}, 501
 
+            send_email = requests.post("http://auth-service:5000/publish_notifications",
+                                       json={
+                                            "event": "register",
+                                            "user": int(data["document_id"]),
+                                            "name": data["full_name"],
+                                            "user_email": data["email"],
+                                            "extra_data": {
+                                                "title": "Registro de Usuario Confirmado",
+                                                "body": "¡Bienvenido al Operador PVC!"
+                                            }
+                                        })
+
             return {'message': 'User registered successfully'}, 201
 
         except Exception as e:
