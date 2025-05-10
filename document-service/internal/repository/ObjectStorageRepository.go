@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"document-service/internal/domain/interfaces"
 	"document-service/internal/domain/models"
-	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -33,8 +34,8 @@ func (o *ObjectStorageRepository) GenerateUploadSignedURL(document models.Docume
 	return url, expiryTime, nil
 }
 func (o *ObjectStorageRepository) GenerateDownloadSignedURL(document models.Document) (string, time.Time, error) {
-	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.Name) {
-		return "", time.Time{}, errors.New("object not found")
+	if !o.gcpclient.ObjectExists(context.Background(), document.Metadata.OwnerID, document.Metadata.AbsPath) {
+		return "", time.Time{}, fmt.Errorf("object does not exist")
 	}
 	expiryTime := document.Metadata.CreationDate.Add(1 * time.Hour)
 	url, err := o.gcpclient.GenerateSignedURL(document.Metadata.AbsPath, "down", document.Metadata, expiryTime)
@@ -110,4 +111,25 @@ func (o *ObjectStorageRepository) AuthDocument(ctx context.Context, document mod
 		return "", err
 	}
 	return authResponse.Message, nil
+}
+
+func (o *ObjectStorageRepository) UploadFile(ctx context.Context, document models.Document, fileBytes []byte) error {
+
+	bucket := o.gcpclient.GetBucketPointer()
+	object := bucket.Object(document.Metadata.AbsPath)
+
+	wc := object.NewWriter(ctx)
+	wc.ContentType = document.Metadata.ContentType
+
+	wc.Metadata = document.Metadata.ToMapCustomMetadata()
+
+	if _, err := io.Copy(wc, bytes.NewReader(fileBytes)); err != nil {
+		return fmt.Errorf("io.Copy: %w", err)
+	}
+
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %w", err)
+	}
+
+	return nil
 }

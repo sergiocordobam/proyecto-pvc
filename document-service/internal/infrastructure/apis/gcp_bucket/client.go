@@ -1,4 +1,4 @@
-package gcp
+package gcp_bucket
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, e
 		return nil, err
 	}
 	if singleClient != nil {
-		err = errors.New("gcp storage client already created")
+		err = errors.New("gcp_bucket storage client already created")
 		return nil, err
 	}
 	once.Do(func() {
@@ -49,11 +49,6 @@ func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, e
 		return nil, err
 	}
 	return singleClient, nil
-}
-
-func (s *StorageClient) ReadObjectData(ctx context.Context, path string) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (s *StorageClient) ObjectExists(ctx context.Context, userID int, path string) bool {
@@ -89,15 +84,25 @@ func (s *StorageClient) GenerateSignedURL(filename string, method string, metada
 	if methodMap[method] == "" {
 		return "", fmt.Errorf("invalid method: %s", method)
 	}
-	signedConfiguration := storage.SignedURLOptions{
-		Scheme:  storage.SigningSchemeV4,
-		Method:  methodMap[method],
-		Expires: expirationTime,
-		Headers: []string{
+	headers := []string{}
+	query := make(map[string][]string)
+
+	if method == "up" {
+		headers = []string{
 			"Content-Type",
 			"x-goog-meta-status:" + metadata.Status,
 			"x-goog-meta-document-type" + ":" + metadata.Type,
-		},
+		}
+	} else {
+		query["response-content-disposition"] = []string{fmt.Sprintf("attachment; filename=\"%s\"", filename)}
+	}
+
+	signedConfiguration := storage.SignedURLOptions{
+		Scheme:          storage.SigningSchemeV4,
+		Method:          methodMap[method],
+		Expires:         expirationTime,
+		Headers:         headers,
+		QueryParameters: query,
 	}
 	url, err := s.Client.Bucket(s.BucketName).SignedURL(filename, &signedConfiguration)
 	if err != nil {
@@ -132,4 +137,9 @@ func (s *StorageClient) Close() error {
 }
 func (s *StorageClient) GetBucketPointer() *storage.BucketHandle {
 	return s.Client.Bucket(s.BucketName)
+}
+
+func (s *StorageClient) UploadFileBytes(ctx context.Context, fileName string, fileBytes []byte) error {
+	//TODO implement me
+	panic("implement me")
 }

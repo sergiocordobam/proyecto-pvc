@@ -22,8 +22,9 @@ func NewDocumentLoaderRoutes(router *chi.Mux, apiConfig *configDomain.Applicatio
 	}
 }
 func (d *DocumentLoaderRoutes) MapRoutes() {
-	service := d.apiConfig.Service
-	handler := handlers.NewDocumentLoaderHandler(service)
+	documentServiceInterface := d.apiConfig.DocumentsService
+	notificationsServiceInterface := d.apiConfig.NotificationsService
+	handler := handlers.NewDocumentLoaderHandler(documentServiceInterface, notificationsServiceInterface)
 	d.router.Post("/files/upload", handler.HandleDocumentUploadSignedURLRequest())
 	d.router.Post("/files/download/{user_id}", handler.HandleDocumentDownloadSignedURLRequest())
 	d.router.Get("/files/{user_id}", handler.HandleDocumentsListByUser())

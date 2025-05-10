@@ -13,4 +13,6 @@ type AuthenticateDocumentResponse struct {
 type AuthDocRequest struct {
 	Files []string `json:"files"`
 	Owner int      `json:"owner"`
+	Email string   `json:"email"`
+	Name  string   `json:"name"`
 }

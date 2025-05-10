@@ -2,6 +2,7 @@ bucket_name: document-service-api-storage
 rabbitMQURL: amqp://guest:guest@rabbitmq:5672/
 queue_names:
   - register_documents_queue
+  - delete_documents_queue
 gov_carpeta_conf:
   base_url: govcarpeta-apis-4905ff3c005b.herokuapp.com
   timeout: 5s
@@ -11,8 +12,6 @@ gov_carpeta_conf:
     interval: 1000ms
     min: 1000ms
     max: 3000ms
-  circuit_breaker:
-    failure_ratio: 0.3
-    min_observation: 10
-    window: 5000ms
-    cooldown: 1000ms
+publisher_config:
+  topic: test-cx-studio-current-state-processed
+  project: test-cx-studio

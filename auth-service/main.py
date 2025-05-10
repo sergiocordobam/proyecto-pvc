@@ -4,6 +4,7 @@ from user_register.register import UserRegister
 from user_delete.delete import UserDelete
 from user_login.login import UserLogin
 from user_exists.exists import UserExists
+from user_reset_password.reset_password import UserResetPassword
 
 app = Flask(__name__)
 CORS(app)
@@ -55,6 +56,23 @@ def user_exists():
     exists = user_exists_service.user_exists(document_id)
 
     return jsonify({'exists': exists}), 200
+
+@app.route("/reset_password", methods=["POST"])
+@cross_origin()
+def reset_password():
+    data = request.get_json()
+    email = data["email"]
+    document_type = data["document_type"]
+    phone = data["phone"]
+    address = data["address"]
+    password = data["password"]
+
+    user_reset_password_service = UserResetPassword()
+    reset_password = user_reset_password_service.update_user_info(email, address, phone, document_type, password)
+
+    return jsonify({
+        "message": reset_password
+    }), 200
 
 if __name__ == "__main__":
     from rabbitmq.consumer import start_all_consumers

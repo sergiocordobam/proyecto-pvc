@@ -32,14 +32,13 @@ func main() {
 	}
 
 	log.Println("Server listening on :8080")
-	// Iniciar el servidor HTTP en una goroutine
+
 	go func() {
 		if err := http.ListenAndServe(":8080", r); err != nil {
 			log.Fatalf("Error al iniciar el servidor HTTP: %v", err)
 		}
 	}()
 
-	//Manejo de señales para un cierre seguro
 	sigChan := make(chan os.Signal, 2)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan //espera señal de interrupción
