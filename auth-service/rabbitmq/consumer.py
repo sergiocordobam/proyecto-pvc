@@ -46,7 +46,7 @@ def start_consumer(queue_name, callback):
     for _ in range(5):
         try:
             print(f"[{queue_name}] Waiting for RabbitMQ...", flush=True)
-            time.sleep(10)
+            time.sleep(30)
 
             connection = pika.BlockingConnection(pika.ConnectionParameters(
                 host=rabbitmq_host,

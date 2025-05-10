@@ -5,9 +5,17 @@ from user_delete.delete import UserDelete
 from user_login.login import UserLogin
 from user_exists.exists import UserExists
 from user_reset_password.reset_password import UserResetPassword
+from google.cloud import pubsub_v1
+import json
+import os
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./serviceAccountKey2.json"
 
 app = Flask(__name__)
 CORS(app)
+
+PROJECT_ID = "zeta-matrix-458323-p1"
+TOPIC_ID = "auth-api-topic"
 
 @app.route("/register", methods=["POST"])
 @cross_origin()
@@ -73,6 +81,22 @@ def reset_password():
     return jsonify({
         "message": reset_password
     }), 200
+
+@app.route("/publish_notifications", methods=["POST"])
+@cross_origin()
+def publish_notifications():
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
+
+    try:
+        data = request.get_json()
+        message_json = json.dumps(data)
+        future = publisher.publish(topic_path, message_json.encode("utf-8"))
+        message_id = future.result()
+
+        return jsonify({"message": "Message published", "message_id": message_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     from rabbitmq.consumer import start_all_consumers
