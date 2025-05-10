@@ -1,4 +1,4 @@
-package gcp
+package gcp_bucket
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, e
 		return nil, err
 	}
 	if singleClient != nil {
-		err = errors.New("gcp storage client already created")
+		err = errors.New("gcp_bucket storage client already created")
 		return nil, err
 	}
 	once.Do(func() {
@@ -49,11 +49,6 @@ func NewStorageClient(ctx context.Context, BucketName string) (*StorageClient, e
 		return nil, err
 	}
 	return singleClient, nil
-}
-
-func (s *StorageClient) ReadObjectData(ctx context.Context, path string) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (s *StorageClient) ObjectExists(ctx context.Context, userID int, path string) bool {

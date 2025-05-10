@@ -15,3 +15,6 @@ type DocumentServiceInterface interface {
 	AuthDocuments(ctx context.Context, request models2.AuthDocRequest) error
 	TransferDocsToCurrentBucket(ctx context.Context, registerDocsReq models2.RegisterDocumentsMessage) error
 }
+type SendNotificationServiceInterface interface {
+	SendNotification(ctx context.Context, notificationRequest models2.NotificationMessage) error
+}

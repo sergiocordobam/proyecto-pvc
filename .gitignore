@@ -4,3 +4,4 @@
 .idea
 __pycache__
 serviceAccountKey.json
+*key-file.json
