@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TransferController } from './controllers/transfer.controler';
 import { TransferService } from './services/transfer.service';
 import { OperatorFetchService } from './services/operator-fetch.service';
+import { PubSubService } from './services/PubSubService';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
@@ -49,6 +50,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   providers: [
     TransferService,
     OperatorFetchService, // <-- This is what was missing
+    PubSubService
   ],
 })
 export class TransferModule {}
