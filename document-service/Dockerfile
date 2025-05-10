@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /document-service cmd/documents-api/mai
 EXPOSE 8080
 
 # Set Google credentials environment variable
-ENV GOOGLE_APPLICATION_CREDENTIALS="/app/internal/infrastructure/apis/gcp/service-account-key.json"
+ENV GOOGLE_APPLICATION_CREDENTIALS="/app/internal/infrastructure/apis/gcp_bucket/service-account-key.json"
 
 # Run the compiled binary instead of using go run
 CMD ["/document-service"]

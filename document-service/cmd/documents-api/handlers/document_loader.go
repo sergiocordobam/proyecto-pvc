@@ -12,12 +12,14 @@ import (
 )
 
 type DocumentLoaderLoaderModules struct {
-	Service interfaces.DocumentServiceInterface
+	Service                interfaces.DocumentServiceInterface
+	notificationsPublisher interfaces.SendNotificationServiceInterface
 }
 
-func NewDocumentLoaderHandler(service interfaces.DocumentServiceInterface) *DocumentLoaderLoaderModules {
+func NewDocumentLoaderHandler(service interfaces.DocumentServiceInterface, publisher interfaces.SendNotificationServiceInterface) *DocumentLoaderLoaderModules {
 	return &DocumentLoaderLoaderModules{
-		Service: service,
+		Service:                service,
+		notificationsPublisher: publisher,
 	}
 }
 func (h *DocumentLoaderLoaderModules) HandleDocumentUploadSignedURLRequest() http.HandlerFunc {
@@ -147,6 +149,7 @@ func (h *DocumentLoaderLoaderModules) HandleDeleteAllFiles() http.HandlerFunc {
 }
 func (h *DocumentLoaderLoaderModules) HandleAuthDocuments() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -158,6 +161,22 @@ func (h *DocumentLoaderLoaderModules) HandleAuthDocuments() http.HandlerFunc {
 		err := h.Service.AuthDocuments(r.Context(), documents)
 		if err != nil {
 			pkg.Error(w, http.StatusFailedDependency, "Error HandleAuthDocuments: %s", err.Error())
+			return
+		}
+		// Send the notification
+		notificationRequest := models2.NotificationMessage{
+			User:  documents.Owner,
+			Name:  documents.Name,
+			Event: "document_auth",
+			ExtraData: map[string]interface{}{
+				"title":   "Ya se han autorizado tus documentos",
+				"message": "Tus documentos han sido autorizados por el administrador",
+				"files":   documents.Files,
+			},
+		}
+		errNotificationsPublisher := h.notificationsPublisher.SendNotification(ctx, notificationRequest)
+		if errNotificationsPublisher != nil {
+			pkg.Error(w, http.StatusInternalServerError, "Error publishing notification: %s", errNotificationsPublisher.Error())
 			return
 		}
 
