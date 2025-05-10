@@ -31,6 +31,7 @@ class UserRegister:
             return {'error': 'User with this document ID already exists'}, 400
 
         try:
+
             user_record = auth.create_user(
                 email=data['email'],
                 password=data['password'],
@@ -46,6 +47,12 @@ class UserRegister:
                 'email': data['email'],
             })
 
+            operator_info = requests.get("http://localhost:3000/comunication/operators/self")
+            operator_id = operator_info["_id"]
+            operator_name = operator_info["operatorName"]
+            print("op id", operator_id)
+            print("op name", operator_name)
+
             # govcarpeta_response = requests.post(
             #     'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
             #     json={
@@ -54,14 +61,16 @@ class UserRegister:
             #         'address': data['address'],
             #         'email': data['email'],
             #         'operatorId': data['operator_id'],
-            #         'operatorName': data['operator_name'],
+            #         'operatorName': "carpeta_PVC",
             #     }
             # )
 
-            # if govcarpeta_response.status_code != 200:
-            #     return {'error': 'Failed to register with GovCarpeta'}, 500
+            # if govcarpeta_response.status_code == 500:
+            #     return {'error': 'GovCarpeta error'}, 500
+            # elif govcarpeta_response.status_code == 501:
+            #     return {'error': 'El ciudadano ya se encuentra registrado'}
 
-            return {'message': 'User registered successfully'}, 201
+            # return {'message': 'User registered successfully'}, 201
 
         except Exception as e:
             return {'error': str(e)}, 500
