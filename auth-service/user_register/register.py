@@ -32,26 +32,28 @@ class UserRegister:
 
         try:
 
-            user_record = auth.create_user(
-                email=data['email'],
-                password=data['password'],
-                display_name=data['full_name']
-            )
+            # user_record = auth.create_user(
+            #     email=data['email'],
+            #     password=data['password'],
+            #     display_name=data['full_name']
+            # )
 
-            users_ref.document(user_record.uid).set({
-                'full_name': data['full_name'],
-                'document_id': data['document_id'],
-                'document_type': data['document_type'],
-                'address': data['address'],
-                'phone': data['phone'],
-                'email': data['email'],
-            })
+            # users_ref.document(user_record.uid).set({
+            #     'full_name': data['full_name'],
+            #     'document_id': data['document_id'],
+            #     'document_type': data['document_type'],
+            #     'address': data['address'],
+            #     'phone': data['phone'],
+            #     'email': data['email'],
+            # })
 
-            operator_info = requests.get("http://localhost:3000/comunication/operators/self")
-            operator_id = operator_info["_id"]
-            operator_name = operator_info["operatorName"]
-            print("op id", operator_id)
-            print("op name", operator_name)
+            operator_info = requests.get("http://interoperator-service:3000/comunication/operators/self")
+            resp = operator_info.json()
+            print("resp", resp, flush=True)
+            # operator_id = operator_info["_id"]
+            # operator_name = operator_info["operatorName"]
+            # print("op id", operator_id, flush=True)
+            # print("op name", operator_name, flush=True)
 
             # govcarpeta_response = requests.post(
             #     'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
@@ -70,7 +72,7 @@ class UserRegister:
             # elif govcarpeta_response.status_code == 501:
             #     return {'error': 'El ciudadano ya se encuentra registrado'}
 
-            # return {'message': 'User registered successfully'}, 201
+            return {'message': 'User registered successfully'}, 201
 
         except Exception as e:
             return {'error': str(e)}, 500
