@@ -176,7 +176,7 @@ func (h *DocumentLoaderLoaderModules) HandleAuthDocuments() http.HandlerFunc {
 		}
 		errNotificationsPublisher := h.notificationsPublisher.SendNotification(ctx, notificationRequest)
 		if errNotificationsPublisher != nil {
-			pkg.Error(w, http.StatusInternalServerError, "Error publishing notification: %s", errNotificationsPublisher.Error())
+			pkg.Error(w, http.StatusFailedDependency, "Error publishing notification: %s", errNotificationsPublisher.Error())
 			return
 		}
 
