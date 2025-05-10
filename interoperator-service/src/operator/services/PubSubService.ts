@@ -6,13 +6,17 @@ export class PubSubService {
     private readonly pubSubClient: PubSub;
 
     constructor() {
-        this.pubSubClient = new PubSub();
+        this.pubSubClient = new PubSub({
+            projectId: process.env.GCP_PROJECT_ID || 'zeta-matrix', // Explicitly set the project ID
+        });
     }
 
     async publishMessage(topicName: string, message: object): Promise<void> {
         try {
-            const messageBuffer = Buffer.from(JSON.stringify(message));
-            await this.pubSubClient.topic(topicName).publish(messageBuffer);
+            // Use the publishMessage method with the json property
+            await this.pubSubClient.topic(topicName).publishMessage({
+                json: message, // Pass the message data as JSON
+            });
             console.log(`Message published to topic ${topicName}`);
         } catch (error) {
             console.error(`Error publishing message to Pub/Sub: ${error.message}`);

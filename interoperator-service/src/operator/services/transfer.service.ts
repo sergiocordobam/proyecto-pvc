@@ -1,10 +1,7 @@
 import { Injectable,HttpException, HttpStatus,Inject, Body } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
-import { ClientProxy, ClientProxyFactory, Transport, MessagePattern} from '@nestjs/microservices';
-import { async, firstValueFrom } from 'rxjs';
+import { ClientProxy} from '@nestjs/microservices';
 import { OperatorFetchService } from './operator-fetch.service';
 import axios from 'axios';
-import { log } from 'console';
 import { RegisterCitizenDto } from '../DTO/RegisterCitizenDTO';
 import { PubSubService } from './PubSubService';
 @Injectable()
