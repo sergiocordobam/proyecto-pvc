@@ -33,7 +33,7 @@ export class OperatorFetchService {
             const operator=operators.find((op) => op.operatorName ===  process.env.OPERATOR_NAME);
             return operator;
         }
-        else {return operators}
+        else {return this.getOperatorById(operators);}
     }
 
     async getOperatorById(id: string): Promise<any> {
