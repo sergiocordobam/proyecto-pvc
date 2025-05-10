@@ -15,4 +15,5 @@ type ObjectStorageRepositoryInterface interface {
 	SetMetadata(ctx context.Context, fileName string, metadata map[string]string) error
 	AuthDocument(ctx context.Context, document models.Document) (string, error)
 	UploadFile(ctx context.Context, document models.Document, fileBytes []byte) error
+	GetCurrentFileAttributes(ctx context.Context, fileName string) (models.Document, error)
 }

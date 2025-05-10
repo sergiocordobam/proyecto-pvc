@@ -165,9 +165,10 @@ func (h *DocumentLoaderLoaderModules) HandleAuthDocuments() http.HandlerFunc {
 		}
 		// Send the notification
 		notificationRequest := models2.NotificationMessage{
-			User:  documents.Owner,
-			Name:  documents.Name,
-			Event: "document_auth",
+			User:      documents.Owner,
+			Name:      documents.Name,
+			Event:     "document_auth",
+			UserEmail: documents.Email,
 			ExtraData: map[string]interface{}{
 				"title":   "Ya se han autorizado tus documentos",
 				"message": "Tus documentos han sido autorizados por el administrador",

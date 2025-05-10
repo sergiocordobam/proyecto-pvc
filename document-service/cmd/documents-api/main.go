@@ -14,12 +14,12 @@ import (
 
 func main() {
 	app := configs.InitializeConfigsApp()
-	rabbitMQConsumer := app.QueueConsumer
+	/*rabbitMQConsumer := app.QueueConsumer
 	errConsumer := rabbitMQConsumer.Connect()
 	if errConsumer != nil {
 		log.Fatalf("Error Connect RabbitMQ: %v", errConsumer)
-	}
-	defer rabbitMQConsumer.Connect()
+	}*/
+	//defer rabbitMQConsumer.Connect()
 	defer app.Config.StorageClient.Close()
 
 	r := chi.NewRouter()
@@ -27,14 +27,14 @@ func main() {
 	router.UseMiddlewares()
 	router.MapRoutes()
 
-	for _, queueName := range app.Config.QueueNames {
+	/*for _, queueName := range app.Config.QueueNames {
 		go rabbitMQConsumer.Consume(queueName)
 	}
-
+	*/
 	log.Println("Server listening on :8080")
 
 	go func() {
-		if err := http.ListenAndServe(":8080", r); err != nil {
+		if err := http.ListenAndServe(":9080", r); err != nil {
 			log.Fatalf("Error al iniciar el servidor HTTP: %v", err)
 		}
 	}()
