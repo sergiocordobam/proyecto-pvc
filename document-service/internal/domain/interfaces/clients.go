@@ -16,6 +16,7 @@ type StorageClientInterface interface {
 	ListObjectsWithPrefix(ctx context.Context, prefix string) ([]storage.ObjectAttrs, error)
 	GetBucketPointer() *storage.BucketHandle
 	UploadFileBytes(ctx context.Context, fileName string, fileBytes []byte) error
+	GetObjectAttributes(ctx context.Context, fileName string) (models.Document, error)
 	Close() error
 }
 type GovCarpetaClientInterface interface {

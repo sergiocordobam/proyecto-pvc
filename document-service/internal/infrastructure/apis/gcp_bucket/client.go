@@ -143,3 +143,20 @@ func (s *StorageClient) UploadFileBytes(ctx context.Context, fileName string, fi
 	//TODO implement me
 	panic("implement me")
 }
+func (s *StorageClient) GetObjectAttributes(ctx context.Context, fileName string) (models.Document, error) {
+	objectHandler := s.Client.Bucket(s.BucketName).Object(fileName)
+	attrs, err := objectHandler.Attrs(ctx)
+	if err != nil {
+		return models.Document{}, err
+	}
+	document := models.Document{
+		Metadata: models.Metadata{
+			Size:         int(attrs.Size),
+			Type:         attrs.Metadata["document-type"],
+			CreationDate: attrs.Created,
+			ContentType:  attrs.ContentType,
+			Status:       attrs.Metadata["status"],
+		},
+	}
+	return document, nil
+}

@@ -133,3 +133,11 @@ func (o *ObjectStorageRepository) UploadFile(ctx context.Context, document model
 
 	return nil
 }
+
+func (o *ObjectStorageRepository) GetCurrentFileAttributes(ctx context.Context, fileName string) (models.Document, error) {
+	doc, err := o.gcpclient.GetObjectAttributes(ctx, fileName)
+	if err != nil {
+		return models.Document{}, err
+	}
+	return doc, nil
+}

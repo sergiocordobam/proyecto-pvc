@@ -250,12 +250,13 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.Auth
 	var multiErrors []error
 	for i, document := range req.Files {
 		wg.Add(1)
-		go func(i int, document string) {
+		go func(i int, documentName string) {
 			defer wg.Done()
-			newDoc := models.NewDocument(document, EmptyStr, EmptyStr, 0, req.Owner)
+			currentDocAttributes, err := d.repository.GetCurrentFileAttributes(ctx, documentName)
+			newDoc := models.NewDocument(documentName, currentDocAttributes.Metadata.Type, currentDocAttributes.Metadata.ContentType, 0, req.Owner)
 			url, _, errUrl := d.repository.GenerateDownloadSignedURL(newDoc)
 			if errUrl != nil {
-				log.Warn("AuthDocuments: error authorizing document", errUrl)
+				log.Warn("AuthDocuments: error authorizing documentName", errUrl)
 				mu.Lock()
 				multiErrors = append(multiErrors, errUrl)
 				mu.Unlock()
@@ -263,7 +264,7 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.Auth
 			newDoc.URL = url
 			_, errAuth := d.repository.AuthDocument(ctx, newDoc)
 			if errAuth != nil {
-				log.Warn("AuthDocuments: error authorizing document", errAuth)
+				log.Warn("AuthDocuments: error authorizing documentName", errAuth)
 				mu.Lock()
 				multiErrors = append(multiErrors, errAuth)
 				mu.Unlock()
@@ -272,7 +273,7 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.Auth
 			newDoc.Metadata.Status = models.VerifiedStatus
 			newMetadata := newDoc.Metadata.ToMapCustomMetadata()
 
-			err := d.repository.SetMetadata(ctx, newDoc.Metadata.AbsPath, newMetadata)
+			err = d.repository.SetMetadata(ctx, newDoc.Metadata.AbsPath, newMetadata)
 			if err != nil {
 				log.Warn("AuthDocuments: error setting metadata")
 				mu.Lock()
