@@ -25,21 +25,20 @@ class UserResetPassword:
         if document_type is not None:
             update_data["document_type"] = document_type
 
-        # Update password in Firebase Authentication
         if password is not None:
             try:
                 user_record = auth.get_user_by_email(email)
                 auth.update_user(user_record.uid, password=password)
-                # print("Firebase Auth password updated.")
+                print("Firebase Auth password updated.", flush=True)
                 return "Firebase Auth password updated"
             except Exception as e:
-                print("Failed to update password in Firebase Auth:", str(e))
+                print("Failed to update password in Firebase Auth:", str(e), flush=True)
                 return f"Failed to update Firebase password: {str(e)}"
 
         if update_data:
             self.db.collection('users').document(user_doc.id).update(update_data)
-            # print("Firestore user data updated:", update_data)
-            return f"Firestore user dta updated: {update_data}"
+            print("Firestore user data updated:", update_data, flush=True)
+            return f"Firestore user data updated: {update_data}"
         else:
-            # print("No Firestore fields to update.")
+            print("No Firestore fields to update.", flush=True)
             return "No Firestore fields to update"

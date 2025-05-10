@@ -32,45 +32,47 @@ class UserRegister:
 
         try:
 
-            # user_record = auth.create_user(
-            #     email=data['email'],
-            #     password=data['password'],
-            #     display_name=data['full_name']
-            # )
+            user_record = auth.create_user(
+                email=data['email'],
+                password=data['password'],
+                display_name=data['full_name']
+            )
 
-            # users_ref.document(user_record.uid).set({
-            #     'full_name': data['full_name'],
-            #     'document_id': data['document_id'],
-            #     'document_type': data['document_type'],
-            #     'address': data['address'],
-            #     'phone': data['phone'],
-            #     'email': data['email'],
-            # })
+            users_ref.document(user_record.uid).set({
+                'full_name': data['full_name'],
+                'document_id': data['document_id'],
+                'document_type': data['document_type'],
+                'address': data['address'],
+                'phone': data['phone'],
+                'email': data['email'],
+            })
 
             operator_info = requests.get("http://interoperator-service:3000/comunication/operators/self")
             resp = operator_info.json()
             print("resp", resp, flush=True)
-            # operator_id = operator_info["_id"]
-            # operator_name = operator_info["operatorName"]
-            # print("op id", operator_id, flush=True)
-            # print("op name", operator_name, flush=True)
+            operator_id = resp["_id"]
+            operator_name = resp["operatorName"]
 
-            # govcarpeta_response = requests.post(
-            #     'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
-            #     json={
-            #         'id': data['document_id'],
-            #         'name': data['full_name'],
-            #         'address': data['address'],
-            #         'email': data['email'],
-            #         'operatorId': data['operator_id'],
-            #         'operatorName': "carpeta_PVC",
-            #     }
-            # )
+            print("1", flush=True)
+            govcarpeta_response = requests.post(
+                'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
+                json={
+                    'id': int(data['document_id']),
+                    'name': data['full_name'],
+                    'address': data['address'],
+                    'email': data['email'],
+                    'operatorId': operator_id,
+                    'operatorName': operator_name,
+                }
+            )
+            print("2", flush=True)
 
-            # if govcarpeta_response.status_code == 500:
-            #     return {'error': 'GovCarpeta error'}, 500
-            # elif govcarpeta_response.status_code == 501:
-            #     return {'error': 'El ciudadano ya se encuentra registrado'}
+            if govcarpeta_response.status_code == 500:
+                print("500", flush=True)
+                return {'error': 'GovCarpeta error'}, 500
+            elif govcarpeta_response.status_code == 501:
+                print("501", flush=True)
+                return {'error': 'El ciudadano ya se encuentra registrado'}, 501
 
             return {'message': 'User registered successfully'}, 201
 
