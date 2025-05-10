@@ -6,7 +6,7 @@ import { OperatorFetchService } from './operator-fetch.service';
 import axios from 'axios';
 import { log } from 'console';
 import { RegisterCitizenDto } from '../DTO/RegisterCitizenDTO';
-
+import { PubSubService } from './PubSubService';
 @Injectable()
 export class TransferService {
     private readonly apiUrl : string;
@@ -18,6 +18,7 @@ export class TransferService {
         @Inject('REGISTER_CITIZEN_CLIENT') private readonly registerCitizenClient: ClientProxy,
         @Inject('REGISTER_DOCUMENTS_CLIENT') private readonly registerDocumentsClient: ClientProxy,
         private readonly fetchService: OperatorFetchService,
+        private readonly PubSubService: PubSubService,
 
     ) {
         this.apiUrl = process.env.API_BASE_URL || 'http://localhost:3000';
@@ -138,6 +139,23 @@ export class TransferService {
             };
 
             await axios.post(confirmAPI, confirmation);
+
+                    // Enviar evento a través de Pub/Sub
+            const topicName = process.env.GCP_PUBSUB_TOPIC_EMAIL || 'email-topic';
+            const externalUrl = 'https://example.com/document';
+            const messageData = {
+            event: 'transfer',
+                user: id,
+                name: citizenName,
+                user_email: citizenEmail,
+                extra_data: {
+                    URL: externalUrl,
+                    Asunto:'Confirmacion de datos para transferencia a Carpeta PVC',
+                    Body:'Tus datos han sido transferidos a la Carpeta PVC, necesitamos confirmar ciertos datos y que nos des tu nueva contraseña, muchas graciaspor seleccionarnos como tu operador de confianza',
+                },
+            };
+            await this.PubSubService.publishMessage(topicName, messageData);
+            console.log(`Evento enviado exitosamente a través de Pub/Sub`);
         } catch (error) {
             const { id, confirmAPI} = request;
             const confirmation = {
