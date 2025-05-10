@@ -31,6 +31,7 @@ class UserRegister:
             return {'error': 'User with this document ID already exists'}, 400
 
         try:
+
             user_record = auth.create_user(
                 email=data['email'],
                 password=data['password'],
@@ -46,20 +47,32 @@ class UserRegister:
                 'email': data['email'],
             })
 
-            # govcarpeta_response = requests.post(
-            #     'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
-            #     json={
-            #         'id': data['document_id'],
-            #         'name': data['full_name'],
-            #         'address': data['address'],
-            #         'email': data['email'],
-            #         'operatorId': data['operator_id'],
-            #         'operatorName': data['operator_name'],
-            #     }
-            # )
+            operator_info = requests.get("http://interoperator-service:3000/comunication/operators/self")
+            resp = operator_info.json()
+            print("resp", resp, flush=True)
+            operator_id = resp["_id"]
+            operator_name = resp["operatorName"]
 
-            # if govcarpeta_response.status_code != 200:
-            #     return {'error': 'Failed to register with GovCarpeta'}, 500
+            print("1", flush=True)
+            govcarpeta_response = requests.post(
+                'https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis/registerCitizen',
+                json={
+                    'id': int(data['document_id']),
+                    'name': data['full_name'],
+                    'address': data['address'],
+                    'email': data['email'],
+                    'operatorId': operator_id,
+                    'operatorName': operator_name,
+                }
+            )
+            print("2", flush=True)
+
+            if govcarpeta_response.status_code == 500:
+                print("500", flush=True)
+                return {'error': 'GovCarpeta error'}, 500
+            elif govcarpeta_response.status_code == 501:
+                print("501", flush=True)
+                return {'error': 'El ciudadano ya se encuentra registrado'}, 501
 
             return {'message': 'User registered successfully'}, 201
 
