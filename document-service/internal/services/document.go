@@ -253,6 +253,14 @@ func (d *DocumentLoadService) AuthDocuments(ctx context.Context, req models.Auth
 		go func(i int, document string) {
 			defer wg.Done()
 			newDoc := models.NewDocument(document, EmptyStr, EmptyStr, 0, req.Owner)
+			url, _, errUrl := d.repository.GenerateDownloadSignedURL(newDoc)
+			if errUrl != nil {
+				log.Warn("AuthDocuments: error authorizing document", errUrl)
+				mu.Lock()
+				multiErrors = append(multiErrors, errUrl)
+				mu.Unlock()
+			}
+			newDoc.URL = url
 			_, errAuth := d.repository.AuthDocument(ctx, newDoc)
 			if errAuth != nil {
 				log.Warn("AuthDocuments: error authorizing document", errAuth)

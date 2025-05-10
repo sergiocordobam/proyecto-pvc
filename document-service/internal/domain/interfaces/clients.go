@@ -9,7 +9,6 @@ import (
 )
 
 type StorageClientInterface interface {
-	ReadObjectData(ctx context.Context, path string) ([]byte, error)
 	ObjectExists(ctx context.Context, userID int, path string) bool
 	DeleteObject(ctx context.Context, path string) error
 	SetObjectAttributes(ctx context.Context, objectHandler *storage.ObjectHandle, attrs storage.ObjectAttrsToUpdate) error
@@ -25,4 +24,8 @@ type GovCarpetaClientInterface interface {
 type TempDownloadFilesClient interface {
 	DownloadFileFromPresignedURL(ctx context.Context, presignedURL string) ([]byte, string, error)
 	DetectContentType(bytesData []byte) (string, error)
+}
+type PubSubClientInterface interface {
+	Publish(ctx context.Context, message []byte) (string, error)
+	Close()
 }
