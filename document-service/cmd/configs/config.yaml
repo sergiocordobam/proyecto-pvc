@@ -13,5 +13,5 @@ gov_carpeta_conf:
     min: 1000ms
     max: 3000ms
 publisher_config:
-  topic: test-cx-studio-current-state-processed
-  project: test-cx-studio
+  topic: documents-topic
+  project: zeta-matrix-458323-p1
