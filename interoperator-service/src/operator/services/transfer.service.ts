@@ -33,7 +33,8 @@ export class TransferService {
     
             // Fetch document URLs via Kong Gateway
             const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/download/${citizenId}/all`);
-            const documentUrls = documentUrlsResponse.data.files;
+            const documentsJson = documentUrlsResponse.json()
+            const documentUrls = documentsJson.data.files;
             console.log(`Fetched document URLs:`, documentUrls);
             
             const formattedUrls = documentUrls.reduce((acc, url, index) => {
