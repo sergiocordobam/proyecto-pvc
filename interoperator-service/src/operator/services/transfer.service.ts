@@ -26,6 +26,10 @@ export class TransferService {
     async processTransfer(@Body() message: any): Promise<void> {
         try {
             const { citizenId, operatorId, citizenName, citizenEmail } = message;
+            console.log("payload citizen recibido");
+            console.log("id", citizenId);
+            console.log("name", citizenName);
+            console.log("email", citizenEmail);
     
             // Fetch document URLs via Kong Gateway
             const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/download/${citizenId}/all`);
@@ -59,8 +63,10 @@ export class TransferService {
             await axios.delete(`${this.apiUrl}/unregisterCitizen`, {
                 data: unregisterCitizen,
             });
+            console.log("unregistered citizen from govcarpeta")
 
             await axios.post(operatorUrl, payload);
+            console.log("operador transferido")
     
         } catch (error) {
             console.error(`Error processing transfer: ${error.message}`);
@@ -69,6 +75,7 @@ export class TransferService {
 
     private async getOperatorUrl(operatorId: string): Promise<string> {
         const operator = await this.fetchService.getOperatorById(operatorId);
+        console.log("url de trasnferencia obtenida")
 
         if (!operator || !operator.transferAPIURL) {
             throw new HttpException(
@@ -90,10 +97,13 @@ export class TransferService {
                     citizenId: id,
                 });
 
+                console.log("delete citizen from operador pvc")
+
                 // Delete documents via RabbitMQ
                 this.deleteDocumentsClient.emit('delete_documents_queue', {
                     citizenId: id
                 });
+                console.log("delete documents from citizen")
             }
         } catch (error) {
             console.error(`Error confirming transfer: ${error.message}`);
