@@ -26,6 +26,7 @@ export class TransferService {
     async processTransfer(@Body() message: any): Promise<void> {
         try {
             const { citizenId, operatorId, citizenName, citizenEmail } = message;
+            const citizenIdInt = parseInt(citizenId, 10);
             console.log("payload citizen recibido");
             console.log("id", citizenId);
             console.log("name", citizenName);
@@ -33,21 +34,26 @@ export class TransferService {
     
             // Fetch document URLs via Kong Gateway
             const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/download/${citizenId}/all`);
-            const documentsJson = documentUrlsResponse.json()
+            const documentsJson = documentUrlsResponse.data
+            if (documentsJson && typeof documentsJson === 'object' && !Array.isArray(documentsJson)) {
+                console.log('documentsJson is a valid JSON object:', documentsJson);
+            } else {
+                throw new Error('documentsJson is not a valid JSON object');
+            }
             const documentUrls = documentsJson.data.files;
             console.log(`Fetched document URLs:`, documentUrls);
             
             const formattedUrls = documentUrls.reduce((acc, url, index) => {
-                acc[`URL${index + 1}`] = url;
+                acc[`URL${index + 1}`] = [url];
                 return acc;
             }, {});
-            // Format the payload to match the required structure
+            //Format the payload to match the required structure
             console.log(`Formatted URLs:`, formattedUrls);
             const payload = {
-                id: citizenId,
+                id: citizenIdInt,
                 citizenName: citizenName,
                 citizenEmail: citizenEmail,
-                urlDocuments: formattedUrls,
+                urlDocuments: documentUrls,
                 confirmAPI: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM, 
             };
     
