@@ -25,15 +25,10 @@ export class TransferService {
      // Listen to the 'transfer_requests' queue
     async processTransfer(@Body() message: any): Promise<void> {
         try {
-            const { citizenId, operatorId } = message;
-    
-            // Fetch citizen info via Kong Gateway
-            const citizenInfoResponse = await axios.get(`${process.env.AUTH_SERVICE_URL}/citizen-info/${citizenId}`);
-            const citizenInfo = citizenInfoResponse.data;
-            console.log(`Fetched citizen info:`, citizenInfo);
+            const { citizenId, operatorId, citizenName, citizenEmail } = message;
     
             // Fetch document URLs via Kong Gateway
-            const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/${citizenId}/all`);
+            const documentUrlsResponse = await axios.get(`${process.env.DOCUMENT_SERVICE_URL}/files/download/${citizenId}/all`);
             const documentUrls = documentUrlsResponse.data.files;
             console.log(`Fetched document URLs:`, documentUrls);
             
@@ -45,8 +40,8 @@ export class TransferService {
             console.log(`Formatted URLs:`, formattedUrls);
             const payload = {
                 id: citizenId,
-                citizenName: citizenInfo.name,
-                citizenEmail: citizenInfo.email,
+                citizenName: citizenName,
+                citizenEmail: citizenEmail,
                 urlDocuments: formattedUrls,
                 confirmAPI: process.env.OPERATOR_TRANSFER_ENDPOINT_CONFIRM, 
             };

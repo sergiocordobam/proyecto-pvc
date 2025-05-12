@@ -27,7 +27,7 @@ def handle_register_citizen(data):
 def handle_delete_citizen(data):
     print("Handling citizen delete:", data, flush=True)
     resp_json = {
-        "document_id": data["citizenId"]
+        "document_id": str(data["citizenId"])
     }
     try:
         response = requests.post("http://auth-service:5000/delete_user", json=resp_json)

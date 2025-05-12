@@ -114,7 +114,7 @@ func (r *RabbitMQConsumer) Connect() error {
 	var conn *amqp.Connection
 	var err error
 	maxRetries := 5
-	retryInterval := 5 * time.Second
+	retryInterval := 30 * time.Second
 	for i := 0; i < maxRetries; i++ {
 		time.Sleep(retryInterval)
 		log.Printf("Intentando conectar a RabbitMQ (intento %d/%d) en %s", i+1, maxRetries, r.rabbitMQURL)
