@@ -13,10 +13,12 @@ class UserDelete:
         try:
             users_ref = self.db.collection('users')
             query = users_ref.where('document_id', '==', document_id).stream()
+            print("query", flush=True)
 
             user_found = None
             for user in query:
                 user_found = user
+                print("for", flush=True)
 
             if not user_found:
                 return {'error': 'User not found with this document ID'}, 404
@@ -24,6 +26,7 @@ class UserDelete:
             user_uid = user_found.id
 
             auth.delete_user(user_uid)
+            print("user_delete", flush=True)
 
             self.db.collection('users').document(user_uid).delete()
 
